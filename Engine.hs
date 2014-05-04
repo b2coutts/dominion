@@ -107,8 +107,8 @@ simGame game@(Game crds amts usrs trn _)
         aPrint game $ "Your turn is starting. Your hand is " ++
                       (show $ hand $ actor game) ++ ".\n"
         oPrint game $ printf "%s's turn is starting.\n" (name $ actor game)
-        game'@Game{turn=Turn usr _ gld _} <- actPhase game
+        game'@Game{turn=trn'@(Turn usr _ gld _)} <- actPhase game
         let endGold = sum $ map (valu . (crds <>)) $ hand $ actor game'
-        game'' <- buyPhase game'{turn=trn{gold = gld + endGold}}
+        game'' <- buyPhase game'{turn=trn'{gold = gld + endGold}}
         let draw = flushHand game'' usr
         simGame draw{turn = Turn (mod (usr+1) $ length usrs) 1 0 1}

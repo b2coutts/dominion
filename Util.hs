@@ -1,9 +1,11 @@
 -- utility code specifically for working with data structures from Structs
 module Util ( aPrint, oPrint, actor, help, buyCard, isKingdom, isOver, calcVP,
-              getWinner, drawCard, (<>), flushHand, shopList, discard ) where
+              getWinner, drawCard, drawCards, (<>), flushHand, shopList,
+              discard ) where
 
 import GHC.Exts
 import System.IO
+import Control.Arrow
 import Text.Printf
 import Data.Maybe
 import Data.List
@@ -86,25 +88,34 @@ getWinner game =
     foldr (\x y@(_,vp) -> if calcVP game x > vp then (x, calcVP game x) else y)
           (0, -99999) [0..length (users game) - 1]
 
--- TODO: maybe handle the case where the deck and discard pile are both empty?
+-- draw a single card for the given user
+--  usr - the index of the user in Game{users}
+drawCard :: Game -> Int -> IO Game
+drawCard game@Game{users=usrs} usr = hPrintf h "You draw a %s.\n" c >>
+    return game{rand = rng', users = usrs'}
+    where u@(User _ hnd dck dsc (h,_)) = users game !! usr
+          ((c:cs, rng'), dsc') = if null dck then (shuf (rand game) dsc, [])
+                                             else ((dck, rand game), dsc)
+          usrs' = take usr usrs ++ [u{hand = c:hnd, deck = cs, disc = dsc'}] ++
+                  drop (usr+1) usrs
+
 -- draws n cards for the given user
 --  n   - the number of cards to draw
---  usr - the index of the user drawing the card in Game{users}
-drawCard :: Game -> Int -> Int -> Game
-drawCard game 0 _ = game
-drawCard game@(Game crds amts usrs _ rnd) n usr = drawCard
-    game{users = take usr usrs ++ [newUsr] ++ drop (usr+1) usrs, rand = rnd'}
-    (n-1) usr
-    where u@(User _ hnd dck dsc _) = usrs !! usr
-          ((c:cs, rnd'), dsc') = if null dck then (shuf rnd dsc, [])
-                                             else ((dck, rnd), dsc)
-          newUsr = u{hand = c:hnd, deck = cs, disc = dsc'}
+--  usr - the index of the user in Game{users}
+drawCards :: Int -> Game -> Int -> IO Game
+drawCards 0 game _ = return game
+drawCards n game usr = do
+    game' <- drawCard game usr
+    drawCards (n-1) game' usr
 
 -- transfer the given user's hand into their discard pile, then draw 5 cards
 --  usr - the index of the user in Game{users}
 flushHand :: Game -> Int -> Game
-flushHand game usr = drawCard game' 5 usr
-    where game' = modActor game (\u@(User _ h _ d _) -> u{hand=[], disc=h++d})
+flushHand game@Game{rand=rng} usr = modActor game{rand = rng'} $ const
+    u{hand = take 5 dck', deck = drop 5 dck', disc = dsc'}
+    where u@(User _ hnd dck dsc _) = actor game
+          ((dck', rng'), dsc') = if length dck >= 5 then ((dck,rng), hnd++dsc)
+                else (first (dck++) $ shuf rng (hnd++dsc), [])
 
 -- create a human-readable list of all cards being sold
 shopList :: Game -> String
