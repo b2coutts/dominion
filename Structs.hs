@@ -8,6 +8,7 @@ import System.IO
 -- data structure representing a single card in the game
 --  cost - the cost to buy this card from the store
 --  valu - the amount of gold this card provides when left unused in the hand
+--  desc - a human-readable description of the card's behaviour
 --  vps  - a function that takes the ending game state and produces the number
 --         of victory points this card is worth. The user who owns this card
 --         will be the "active" (turn) user in the game state
@@ -18,9 +19,10 @@ data Card = Card { cost :: Int
                  , valu :: Int
                  , vps  :: Either Int (Game -> Int)
                  , func :: Maybe (Game -> IO Game)
+                 , desc :: String
                  }
 instance Show Card where
-    show (Card c v _ _) = "Card(" ++ show c ++ "," ++ show v ++ ")"
+    show (Card c v _ _ d) = "Card("++ show c ++","++ show v ++": "++ d ++")"
 
 -- name - the name of the user
 -- hand - a list of the cards in the user's hand

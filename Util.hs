@@ -1,7 +1,7 @@
 -- utility code specifically for working with data structures from Structs
 module Util ( aPrint, oPrint, actor, help, buyCard, isKingdom, isOver, calcVP,
               getWinner, drawCard, drawCards, (<>), flushHand, shopList,
-              discard ) where
+              discard, cardInfo ) where
 
 import GHC.Exts
 import System.IO
@@ -46,6 +46,23 @@ modActor game@Game{users=usrs, turn=Turn{user=usr}} f =
 help :: Game -> IO ()
 help game = aPrint game $
     "TODO. Available commands: buy, end, play, hand, list, help.\n"
+
+-- produces a string representing info for a card, or an error message if the
+-- card does not exist
+--  crd - the name of the card
+cardInfo :: Game -> String -> String
+cardInfo Game{cards = crds} crd = case M.lookup crd crds of
+    Nothing -> printf "'%s' is not a card in this game.\n" crd
+    Just (Card cst valu vp fn dscr) -> unlines $
+        let cname = crd ++ case fn of Nothing -> ""
+                                      Just _  -> " (ACTION)" in
+            [ cname
+            , replicate (length cname) '-'
+            , printf "Cost: %d" cst
+            , printf "Value: %d" valu
+            , case vp of Left n  -> printf "VPs: %d\n" n
+                         Right _ -> "VPs: ?\n"
+            , dscr ]
 
 -- returns a new game state where the active user has purchased the given card
 --  c   - the name of the card being purchased

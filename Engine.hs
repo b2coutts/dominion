@@ -44,6 +44,12 @@ actPhase game@(Game crds amts usrs (Turn usr buys gold acts) _)
             "list":_ -> do
                 aPrint game $ shopList game
                 actPhase game
+            ["info"] -> do
+                aPrint game $ "Usage: info <card>\n"
+                actPhase game
+            "info":c:_ -> do
+                aPrint game $ cardInfo game c
+                actPhase game
             "help":_ -> help game >> actPhase game
             cmd:_ -> do
                 aPrint game $ "Unknown command: " ++ cmd ++ "\n"
@@ -85,6 +91,12 @@ buyPhase game@(Game crds amts usrs (Turn usr buys gold acts) _) = do
             buyPhase game
         "list":_ -> do
             aPrint game $ shopList game
+            buyPhase game
+        ["info"] -> do
+            aPrint game $ "Usage: info <card>\n"
+            buyPhase game
+        "info":c:_ -> do
+            aPrint game $ cardInfo game c
             buyPhase game
         "help":_ -> help game >> buyPhase game
         cmd:_ -> do
