@@ -44,7 +44,7 @@ startingHand = replicate 7 "copper" ++ replicate 3 "estate"
 -- TODO: add the basic cards to this list as well
 userNames = ["alice", "bob"]
 cardList = ["gardens", "moat", "village", "woodcutter", "smithy", "festival",
-            "laboratory", "market"]
+            "laboratory", "market", "cellar"]
 
 -- given a list of usernames and a RNG, produces a list of users and a new RNG
 --  fdir - the directory containing all of the named pipes
