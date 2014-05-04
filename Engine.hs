@@ -31,8 +31,8 @@ actPhase game@(Game crds amts usrs (Turn usr buys gold acts) _)
                 | otherwise -> do
                     aPrint game $ printf "Using '%s'.\n" c
                     oPrint game $ printf "%s uses '%s'.\n" name c
-                    game' <- fromJust fn game
-                    actPhase $ discard game' c
+                    game' <- fromJust fn (discard game c)
+                    actPhase game'
                 where fn = func $ crds <> c
             "end":_ -> return game
             "buy":_ -> do
@@ -106,6 +106,7 @@ simGame game@(Game crds amts usrs trn _)
     | otherwise = do
         aPrint game $ "Your turn is starting. Your hand is " ++
                       (show $ hand $ actor game) ++ ".\n"
+        oPrint game $ printf "%s's turn is starting.\n" (name $ actor game)
         game'@Game{turn=Turn usr _ gld _} <- actPhase game
         let endGold = sum $ map (valu . (crds <>)) $ hand $ actor game'
         game'' <- buyPhase game'{turn=trn{gold = gld + endGold}}
