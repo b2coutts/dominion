@@ -69,12 +69,17 @@ isOver game@(Game crds amts usrs (Turn usr buys gold acts) _) =
     amts <> "province" == 0 ||
     (M.size $ M.filterWithKey (\k v -> isKingdom k && v == 0) amts) >= 3
 
+-- calculates the victory points of a single card in a game
+cardVP :: Game -> Card -> Int
+cardVP _ Card{vps = Left n} = n
+cardVP game Card{vps = Right f} = f game
+
 -- calculates the victory points for a single player in the game
 --  game - the game state
 --  user - the index of the player in (users game)
 calcVP :: Game -> Int -> Int
 calcVP game@Game{cards = crds, users = usrs} usr =
-    sum $ map (\c -> vps (crds <> c) game') $ allcards
+    sum $ map (cardVP game . (crds <>)) allcards
     where game' = game{turn = Turn usr 0 0 0}
           allcards = concatMap ($ (usrs !! usr)) [hand, disc, deck]
 

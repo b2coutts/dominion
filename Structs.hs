@@ -16,7 +16,7 @@ import System.IO
 --         producing the new game state
 data Card = Card { cost :: Int
                  , valu :: Int
-                 , vps  :: Game -> Int
+                 , vps  :: Either Int (Game -> Int)
                  , func :: Maybe (Game -> IO Game)
                  }
 instance Show Card where
