@@ -1,7 +1,8 @@
 -- code for the base dominion set
 module Base ( baseSet ) where
 
-import Data.Map
+import qualified Data.Map as M
+import Data.List
 import Text.Printf
 
 import Deck
@@ -33,9 +34,26 @@ cellarAcc n game = do
           echeck crd = if crd `elem` hnd then Nothing
             else Just $ printf "'%s' is not in your hand!\n" crd
 
+chapelAcc :: Int -> Game -> IO Game
+chapelAcc 4 game = return game
+chapelAcc n game = do
+    crd <- prompt oi msg echeck
+    if crd == "end" then return $ actDec game else do
+        aPrint game $ printf "Trashed %s.\n" crd
+        oPrint game $ printf "%s trashed %s.\n" nm crd
+        chapelAcc (n+1) $ modActor game $ const u{hand = delete crd hnd}
+    where u@(User nm hnd _ dsc oi) = actor game
+          msg = printf "Your hand is %s. You have discarded %d cards. Type the\
+                      \ name of the card you wish to discard, or end to stop\
+                      \ discarding." (show hnd) n
+          echeck "end" = Nothing
+          echeck crd = if crd `elem` hnd then Nothing
+              else Just $ printf "'%s' is not in your hand!\n" crd
+    
+
 -- TODO: complicated kingdom cards
-baseSet :: Map String Card
-baseSet = fromList
+baseSet :: M.Map String Card
+baseSet = M.fromList
   -- basic cards
   [ ("copper",   Card 0 1 zero Nothing "")
   , ("silver",   Card 3 2 zero Nothing "")
@@ -69,4 +87,6 @@ baseSet = fromList
   -- complicated kingdom cards
   , ("cellar", Card 2 0 zero (Just $ cellarAcc 0) $ "+1 Action\n\n" ++ dWrap
         "Discard any number of cards. +1 Card per card discarded.")
+  , ("chapel", Card 2 0 zero (Just $ chapelAcc 0) $ dWrap
+        "Trash up to 4 cards from your hand.")
   ]

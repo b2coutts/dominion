@@ -1,7 +1,7 @@
 -- utility code specifically for working with data structures from Structs
-module Util ( aPrint, oPrint, actor, help, buyCard, isKingdom, isOver, calcVP,
-              getWinner, drawCard, drawCards, (<>), flushHand, shopList,
-              discard, cardInfo, prompt ) where
+module Util ( aPrint, oPrint, actor, modActor, help, buyCard, isKingdom,
+              isOver, calcVP, getWinner, drawCard, drawCards, (<>), flushHand,
+              shopList, discard, cardInfo, prompt, actDec ) where
 
 import GHC.Exts
 import System.IO
@@ -175,3 +175,7 @@ prompt (out,inp) msg fn = do
     resp <- hGetLine inp
     case fn resp of Nothing  -> return resp
                     Just err -> hPutStrLn out err >> prompt (out,inp) msg fn
+
+-- decreases the number of actions in the game by 1
+actDec :: Game -> Game
+actDec game@Game{turn=trn@Turn{acts=n}} = game{turn=trn{acts = n-1}}
