@@ -1,7 +1,7 @@
 -- utility code specifically for working with data structures from Structs
 module Util ( aPrint, oPrint, actor, help, buyCard, isKingdom, isOver, calcVP,
               getWinner, drawCard, drawCards, (<>), flushHand, shopList,
-              discard, cardInfo ) where
+              discard, cardInfo, prompt ) where
 
 import GHC.Exts
 import System.IO
@@ -100,9 +100,6 @@ calcVP game@Game{cards = crds, users = usrs} usr =
     where game' = game{turn = Turn usr 0 0 0}
           allcards = concatMap ($ (usrs !! usr)) [hand, disc, deck]
 
--- a is 
--- mid takes (User -> [String]) to [String], 
-
 -- calculates victory points and produces the winner or the game, and their VPs
 -- TODO: ties
 getWinner :: Game -> (Int, Int)
@@ -149,3 +146,32 @@ shopList (Game crds amts _ _ _) = "Card                Cost    Amount\n" ++
 discard :: Game -> String -> Game
 discard game c = modActor game (\u@(User _ h _ d _) -> u{hand = delete c h,
                                                          disc = c:d})
+
+-- given a user, prompts them for a response in a list of responses; returns
+-- Nothing if the user says "end"
+-- TODO: maybe generalize this to take a (String -> Bool) instead of [String]
+{-
+prompt :: Game -> Int -> [String] -> IO (Maybe String)
+getCard game msg usr cs = do
+    hPutStrLn h msg
+    c <- hGetLine h
+    if c == "end" then return Nothing
+        else if c `elem` cs then return $ Just c
+            else do
+                hPrintf "You chose '%s'; please choose one of 
+    where h = snd $ io $ actor $ game
+    -}
+
+-- prompt a user for input with error checking.
+--  (o,i) - a pair of the output/input handles with which to talk to the user
+--  msg   - a message with which to prompt the user
+--  fn    - a function which is applied to the user's response. If it produces
+--          Nothing, then Just the user's response is returned. If it produces
+--          Just err, then the error message err is printed to the user, and
+--          they are reprompted for input.
+prompt :: (Handle, Handle) -> String -> (String -> Maybe String) -> IO String
+prompt (out,inp) msg fn = do
+    hPutStrLn out msg
+    resp <- hGetLine inp
+    case fn resp of Nothing  -> return resp
+                    Just err -> hPutStrLn out err >> prompt (out,inp) msg fn
