@@ -21,18 +21,20 @@ amtOverrides = fromList
     [ ("copper"  , 60)
     , ("silver"  , 40)
     , ("gold"    , 30)
-    , ("platinum", 12)
-    , ("potions" , 16)
+    -- , ("platinum", 12)
+    -- , ("potions" , 16)
     , ("estate"  , 24)
     , ("duchy"   , 12)
-    , ("colony"  , 12) -- TODO: is this right?
-    , ("curse"   , 30) ]
+    -- , ("colony"  , 12) -- TODO: is this right?
+    -- , ("curse"   , 30)
+    ]
 
 -- the cards that a user starts with, in no particular order
 startingHand :: [String]
 startingHand = replicate 7 "copper" ++ replicate 3 "estate"
 
 -- TODO: ask the users to input names/cards instead of hardcoding these values
+-- TODO: add the basic cards to this list as well
 userNames = ["Bryan"]
 cardList = ["gardens", "moat", "village", "woodcutter", "smithy", "festival",
             "laboratory", "market"]
@@ -49,17 +51,20 @@ newUsers rng (u:us) = (User u (take 5 hnd) (drop 5 hnd) [] handle : rec, rng'')
 -- TODO: error handling for when a given card is not in masterSet
 newGame :: StdGen -> Map String Card -> [String] -> [String] -> Game
 newGame rng master names crds = Game{
-    cards   = filterWithKey (\k v -> elem k crds) master,
-    amounts = filterWithKey (\k v -> elem k crds) $
-                unions [ singleton "province" (4 * length names)
-                       , amtOverrides
-                       , fromList $ zip crds $ repeat 10 ],
+    cards   = filterWithKey (\k v -> elem k allcards) master,
+    amounts = unions [ singleton "province" (4 * length names)
+                     , amtOverrides
+                     , fromList $ zip crds $ repeat 10 ],
     users   = usrs,
     turn    = Turn 0 1 0 1,
     rand    = rng' }
     where (usrs, rng') = newUsers rng names
+          allcards = crds ++ keys amtOverrides ++ ["province"]
 
 main = do
     rng <- getStdGen
     let game = newGame rng masterSet userNames cardList
-    simGame game
+    -- putStrLn $ show game ++ "\n" -- debug
+    end <- simGame game
+    putStrLn "Game over. Ending state:"
+    putStrLn $ show end

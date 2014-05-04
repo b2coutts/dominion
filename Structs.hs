@@ -20,7 +20,7 @@ data Card = Card { cost :: Int
                  , func :: Maybe (Game -> IO Game)
                  }
 instance Show Card where
-    show (Card c v _ _) = "cost,val: " ++ show c ++ "," ++ show v
+    show (Card c v _ _) = "Card(" ++ show c ++ "," ++ show v ++ ")"
 
 -- name - the name of the user
 -- hand - a list of the cards in the user's hand
