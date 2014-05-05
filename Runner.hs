@@ -27,12 +27,8 @@ amtOverrides = fromList
     [ ("copper"  , 60)
     , ("silver"  , 40)
     , ("gold"    , 30)
-    -- , ("platinum", 12)
-    -- , ("potions" , 16)
     , ("estate"  , 24)
     , ("duchy"   , 12)
-    -- , ("colony"  , 12)
-    -- , ("curse"   , 30)
     ]
 
 -- the cards that a user starts with, in no particular order
@@ -97,11 +93,9 @@ main = do
     -- run game
     rng <- getStdGen
     let game = newGame fdir rng masterSet userHandles cardList
-    -- putStrLn $ show game ++ "\n" -- debug
     putStrLn "Starting game..."
     end <- simGame game
     putStrLn "Game is over."
-    -- printf "Game over. Ending state:\n%s\n" show end
 
     -- clean up (TODO: somehow make this happen automatically on crash)
     removeDirectoryRecursive fdir

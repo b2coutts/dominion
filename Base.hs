@@ -16,8 +16,7 @@ zero = Left 0
 gardensVP :: User -> Int
 gardensVP (User _ hnd dck dsc _) = mod (length hnd + length dck + length dsc) 10
 
--- helper function for cellar; prompts the actor to discard 0 or more cards, and
--- returns the number of cards discarded.
+-- helper function for cellar; prompts the actor to discard 0 or more cards
 --  n - the number of cards discarded so far
 cellarAcc :: Int -> Game -> IO Game
 cellarAcc n game = do
@@ -34,6 +33,7 @@ cellarAcc n game = do
           echeck crd = if crd `elem` hnd then Nothing
             else Just $ printf "'%s' is not in your hand!" crd
 
+-- helper function for chapel; prompts the actor to trash up to 4 cards
 chapelAcc :: Int -> Game -> IO Game
 chapelAcc 4 game = return game
 chapelAcc n game = do
@@ -51,7 +51,6 @@ chapelAcc n game = do
               else Just $ printf "'%s' is not in your hand!" crd
     
 
--- TODO: complicated kingdom cards
 baseSet :: M.Map String Card
 baseSet = M.fromList
   -- basic cards

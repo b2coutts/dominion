@@ -47,7 +47,6 @@ help game = aPrint game $
 
 -- produces a string representing info for a card, or an error message if the
 -- card does not exist
---  crd - the name of the card
 cardInfo :: Game -> String -> String
 cardInfo Game{cards = crds} crd = case M.lookup crd crds of
     Nothing -> printf "'%s' is not a card in this game.\n" crd
@@ -64,7 +63,6 @@ cardInfo Game{cards = crds} crd = case M.lookup crd crds of
             , dscr ]
 
 -- returns a new game state where the active user has purchased the given card
---  c - the name of the card being purchased
 buyCard :: Game -> String -> Game
 buyCard game@Game{turn=trn@(Turn usr bys gld act), amounts = amts} c =
     modActor game' (\u -> u{disc = c : disc u})
@@ -91,8 +89,6 @@ cardVP _ Card{vps = Left n} = n
 cardVP game Card{vps = Right f} = f game
 
 -- calculates the victory points for a single player in the game
---  game - the game state
---  user - the index of the player in (users game)
 calcVP :: Game -> Int -> Int
 calcVP game@Game{cards = crds, users = usrs} usr =
     sum $ map (cardVP game . (crds <>)) allcards
@@ -107,7 +103,6 @@ getWinner game =
           (0, -99999) [0..length (users game) - 1]
 
 -- draw a single card for the given user
---  usr - the index of the user in Game{users}
 drawCard :: Game -> Int -> IO Game
 drawCard game@Game{users=usrs} usr = hPrintf h "You draw a %s.\n" c >>
     return game{rand = rng', users = usrs'}
@@ -118,8 +113,7 @@ drawCard game@Game{users=usrs} usr = hPrintf h "You draw a %s.\n" c >>
                   drop (usr+1) usrs
 
 -- draws n cards for the given user
---  n   - the number of cards to draw
---  usr - the index of the user in Game{users}
+--  n - the number of cards to draw
 drawCards :: Int -> Game -> Int -> IO Game
 drawCards 0 game _ = return game
 drawCards n game usr = do
@@ -127,7 +121,6 @@ drawCards n game usr = do
     drawCards (n-1) game' usr
 
 -- transfer the given user's hand into their discard pile, then draw 5 cards
---  usr - the index of the user in Game{users}
 flushHand :: Game -> Int -> Game
 flushHand game@Game{rand=rng} usr = modActor game{rand = rng'} $ const
     u{hand = take 5 dck', deck = drop 5 dck', disc = dsc'}
@@ -153,8 +146,7 @@ discard game c = modActor game (\u@(User _ h _ d _) -> u{hand = delete c h,
 --        Nothing, then Just the user's response is returned. If it produces
 --        Just err, then the error message err is printed to the user, and
 --        they are reprompted for input.
-prompt :: Game -> Int -> String -> (String -> Maybe String) ->
-    IO String
+prompt :: Game -> Int -> String -> (String -> Maybe String) -> IO String
 prompt game usr msg fn = do
     hPutStrLn out msg
     resp <- hGetLine inp
