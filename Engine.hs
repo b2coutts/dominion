@@ -18,8 +18,8 @@ actPhase game@(Game crds amts usrs (Turn usr bys gld acts) _)
         if c == "/end" then return game else case func $ crds <> c of
             Nothing -> printf "'%s' is not an action card!" c >> actPhase game
             Just fn -> do
-                aPrint game $ printf "Using '%s'." c
-                oPrint game $ printf "%s uses '%s'." nm c
+                aPrint game $ printf "Using '%s'.\n" c
+                oPrint game $ printf "%s uses '%s'.\n" nm c
                 game' <- fn $ discard game c
                 actPhase game'
     where (User nm hnd dck dsc oi) = usrs !! usr
@@ -27,8 +27,11 @@ actPhase game@(Game crds amts usrs (Turn usr bys gld acts) _)
                       \ cards are %s. Which card will you play?"
                         bys gld acts (show hnd)
           echeck "/end" = Nothing
-          echeck crd = if crd `elem` hnd then Nothing
-            else Just $ printf "'%s' is not in your hand!" crd
+          echeck crd
+            | crd `elem` hnd = case func $ crds <> crd of
+                Nothing -> Just $ printf "'%s' is not an action card!" crd
+                Just _  -> Nothing
+            | otherwise      = Just $ printf "'%s' is not in your hand!" crd
 
 
 -- simulates the buy phase of a user
@@ -37,8 +40,8 @@ buyPhase game@Game{turn = Turn{buys = 0}} = return game
 buyPhase game@(Game crds amts usrs (Turn usr bys gld acts) _) = do
     c <- prompt game usr msg echeck
     if c == "/end" then return game else do
-        aPrint game $ printf "Purchased card '%s'." c
-        oPrint game $ printf "%s purchased '%s'." name c
+        aPrint game $ printf "Purchased card '%s'.\n" c
+        oPrint game $ printf "%s purchased '%s'.\n" name c
         buyPhase $ buyCard game c
     where (User name hnd dck dsc oi) = usrs !! usr
           msg = printf "You have %d buys and %d gold. Which card will you\
@@ -60,6 +63,8 @@ simGame game@(Game crds amts usrs trn _)
         aPrint ig $ printf "Congrats! You won with %d victory points!\n" vp
         oPrint ig $ printf "%s won the game with %d victory points!\n"
                            (name $ usrs !! usri) vp
+        aPrint ig $ finalScore ig
+        oPrint ig $ finalScore ig
         return game
     | otherwise = do
         aPrint game $ "Your turn is starting.\n"

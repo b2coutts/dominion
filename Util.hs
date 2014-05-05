@@ -1,7 +1,8 @@
 -- utility code specifically for working with data structures from Structs
 module Util ( aPrint, oPrint, actor, modActor, help, buyCard, isKingdom,
               isOver, calcVP, getWinner, drawCard, drawCards, (<>), flushHand,
-              shopList, discard, cardInfo, prompt, actDec, shuf ) where
+              shopList, discard, cardInfo, prompt, actDec, shuf,
+              finalScore) where
 
 import GHC.Exts
 import System.IO
@@ -101,6 +102,12 @@ getWinner :: Game -> (Int, Int)
 getWinner game =
     foldr (\x y@(_,vp) -> if calcVP game x > vp then (x, calcVP game x) else y)
           (0, -99999) [0..length (users game) - 1]
+
+-- creates a display of the final scores in the game
+finalScore :: Game -> String
+finalScore game@Game{users=usrs} = unlines $ ["Player              Score"] ++
+    map (\(nm,vp) -> printf "%-20s%d" nm vp) (sortWith snd scores)
+    where scores = [(name $ usrs!!i, calcVP game i) | i <- [0..length usrs - 1]]
 
 -- draw a single card for the given user
 drawCard :: Game -> Int -> IO Game
