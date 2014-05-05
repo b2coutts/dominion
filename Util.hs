@@ -147,21 +147,6 @@ discard :: Game -> String -> Game
 discard game c = modActor game (\u@(User _ h _ d _) -> u{hand = delete c h,
                                                          disc = c:d})
 
--- given a user, prompts them for a response in a list of responses; returns
--- Nothing if the user says "end"
--- TODO: maybe generalize this to take a (String -> Bool) instead of [String]
-{-
-prompt :: Game -> Int -> [String] -> IO (Maybe String)
-getCard game msg usr cs = do
-    hPutStrLn h msg
-    c <- hGetLine h
-    if c == "end" then return Nothing
-        else if c `elem` cs then return $ Just c
-            else do
-                hPrintf "You chose '%s'; please choose one of 
-    where h = snd $ io $ actor $ game
-    -}
-
 -- prompt a user for input with error checking. Also handles special commands
 --  usr - the index of the user in Game{users}
 --  msg - a message with which to prompt the user
