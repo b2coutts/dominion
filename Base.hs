@@ -21,34 +21,34 @@ gardensVP (User _ hnd dck dsc _) = mod (length hnd + length dck + length dsc) 10
 --  n - the number of cards discarded so far
 cellarAcc :: Int -> Game -> IO Game
 cellarAcc n game = do
-    crd <- prompt oi msg echeck
-    if crd == "end" then drawCards n game (user $ turn $ game) else do
+    crd <- prompt game (user $ turn $ game) msg echeck
+    if crd == "/end" then drawCards n game (user $ turn $ game) else do
         aPrint game $ printf "Discarded %s.\n" crd
         oPrint game $ printf "%s discarded %s.\n" nm crd
         cellarAcc (n+1) (discard game crd)
     where (User nm hnd _ dsc oi) = actor game
           msg = printf "Your hand is %s. You have discarded %d cards. Type the\
-                       \ name of the card you wish to discard, or end to stop\
+                       \ name of the card you wish to discard, or /end to stop\
                        \ discarding." (show hnd) n
-          echeck "end" = Nothing
+          echeck "/end" = Nothing
           echeck crd = if crd `elem` hnd then Nothing
-            else Just $ printf "'%s' is not in your hand!\n" crd
+            else Just $ printf "'%s' is not in your hand!" crd
 
 chapelAcc :: Int -> Game -> IO Game
 chapelAcc 4 game = return game
 chapelAcc n game = do
-    crd <- prompt oi msg echeck
-    if crd == "end" then return $ actDec game else do
+    crd <- prompt game (user $ turn $ game) msg echeck
+    if crd == "/end" then return $ actDec game else do
         aPrint game $ printf "Trashed %s.\n" crd
         oPrint game $ printf "%s trashed %s.\n" nm crd
         chapelAcc (n+1) $ modActor game $ const u{hand = delete crd hnd}
     where u@(User nm hnd _ dsc oi) = actor game
           msg = printf "Your hand is %s. You have discarded %d cards. Type the\
-                      \ name of the card you wish to discard, or end to stop\
+                      \ name of the card you wish to discard, or /end to stop\
                       \ discarding." (show hnd) n
-          echeck "end" = Nothing
+          echeck "/end" = Nothing
           echeck crd = if crd `elem` hnd then Nothing
-              else Just $ printf "'%s' is not in your hand!\n" crd
+              else Just $ printf "'%s' is not in your hand!" crd
     
 
 -- TODO: complicated kingdom cards

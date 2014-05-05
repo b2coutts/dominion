@@ -45,7 +45,7 @@ modActor game@Game{users=usrs, turn=Turn{user=usr}} f =
 --   TODO: info command
 help :: Game -> IO ()
 help game = aPrint game $
-    "TODO. Available commands: buy, end, play, hand, list, help.\n"
+    "TODO. Available commands: end, hand, list, help.\n"
 
 -- produces a string representing info for a card, or an error message if the
 -- card does not exist
@@ -65,12 +65,12 @@ cardInfo Game{cards = crds} crd = case M.lookup crd crds of
             , dscr ]
 
 -- returns a new game state where the active user has purchased the given card
---  c   - the name of the card being purchased
---  amt - the amount of c available in the shop
-buyCard :: Game -> String -> Int -> Game
-buyCard game@Game{turn=trn@(Turn usr bys gld act), amounts = amts} c amt =
+--  c - the name of the card being purchased
+buyCard :: Game -> String -> Game
+buyCard game@Game{turn=trn@(Turn usr bys gld act), amounts = amts} c =
     modActor game' (\u -> u{disc = c : disc u})
     where cardCost = cost $ cards game <> c
+          amt   = amts <> c
           game' = game{amounts = M.insert c (amt-1) amts,
                        turn = trn{buys = bys-1, gold = gld-cardCost}}
 
@@ -162,19 +162,29 @@ getCard game msg usr cs = do
     where h = snd $ io $ actor $ game
     -}
 
--- prompt a user for input with error checking.
---  (o,i) - a pair of the output/input handles with which to talk to the user
---  msg   - a message with which to prompt the user
---  fn    - a function which is applied to the user's response. If it produces
---          Nothing, then Just the user's response is returned. If it produces
---          Just err, then the error message err is printed to the user, and
---          they are reprompted for input.
-prompt :: (Handle, Handle) -> String -> (String -> Maybe String) -> IO String
-prompt (out,inp) msg fn = do
+-- prompt a user for input with error checking. Also handles special commands
+--  usr - the index of the user in Game{users}
+--  msg - a message with which to prompt the user
+--  fn  - a function which is applied to the user's response. If it produces
+--        Nothing, then Just the user's response is returned. If it produces
+--        Just err, then the error message err is printed to the user, and
+--        they are reprompted for input.
+prompt :: Game -> Int -> String -> (String -> Maybe String) ->
+    IO String
+prompt game usr msg fn = do
     hPutStrLn out msg
     resp <- hGetLine inp
-    case fn resp of Nothing  -> return resp
-                    Just err -> hPutStrLn out err >> prompt (out,inp) msg fn
+    case words resp of
+        "/hand":_   -> (aPrint game $ printf "Your hand is: %s.\n" (show hnd))
+                       >> redo
+        "/list":_   -> (aPrint game $ shopList game) >> redo
+        ["/info"]   -> (aPrint game $ "Usage: /info <card>\n") >> redo
+        "/info":c:_ -> (aPrint game $ cardInfo game c) >> redo
+        "/help":_   -> help game >> redo
+        _ -> case fn resp of Nothing  -> return resp
+                             Just err -> hPutStrLn out err >> redo
+    where redo = prompt game usr msg fn
+          User nm hnd dck dsc (out, inp) = users game !! usr
 
 -- decreases the number of actions in the game by 1
 actDec :: Game -> Game

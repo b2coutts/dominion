@@ -12,99 +12,46 @@ import Util
 -- simulates the action phase of a user
 -- TODO: pretty-print user's hand
 actPhase :: Game -> IO Game
-actPhase game@(Game crds amts usrs (Turn usr buys gold acts) _)
+actPhase game@(Game crds amts usrs (Turn usr bys gld acts) _)
     | acts == 0 = return game
-    -- | null $ catMaybes $ map (func . (crds <>)) hand =  return game
     | otherwise = do
-        aPrint game $ printf "You have %d buys, %d bonus gold, and %d actions.\
-            \ Your cards are %s. Which card will you play? Type help for a\
-            \ command list.\n" buys gold acts (show hand)
-        cmd <- hGetLine $ snd h
-        case words cmd of
-            "play":c:_
-                | not $ c `elem` hand -> do
-                    aPrint game $ printf "You don't have the card '%s'!\n" c
-                    actPhase game
-                | isNothing fn -> do
-                    aPrint game $ printf "'%s' is not an action card!\n" c
-                    actPhase game
-                | otherwise -> do
-                    aPrint game $ printf "Using '%s'.\n" c
-                    oPrint game $ printf "%s uses '%s'.\n" name c
-                    game' <- fromJust fn (discard game c)
-                    actPhase game'
-                where fn = func $ crds <> c
-            "end":_ -> return game
-            "buy":_ -> do
-                aPrint game "You can't buy cards during the action phase.\n"
-                actPhase game
-            "hand":_ -> do
-                aPrint game $ printf "Your hand is: %s.\n" (show hand)
-                actPhase game
-            "list":_ -> do
-                aPrint game $ shopList game
-                actPhase game
-            ["info"] -> do
-                aPrint game $ "Usage: info <card>\n"
-                actPhase game
-            "info":c:_ -> do
-                aPrint game $ cardInfo game c
-                actPhase game
-            "help":_ -> help game >> actPhase game
-            cmd:_ -> do
-                aPrint game $ "Unknown command: " ++ cmd ++ "\n"
-                help game
-                actPhase game
-            [] -> actPhase game
-    where (User name hand deck disc h) = usrs !! usr
+        c <- prompt game usr msg echeck
+        if c == "/end" then return game else case func $ crds <> c of
+            Nothing -> printf "'%s' is not an action card!" c >> actPhase game
+            Just fn -> do
+                aPrint game $ printf "Using '%s'." c
+                oPrint game $ printf "%s uses '%s'." nm c
+                game' <- fn $ discard game c
+                actPhase game'
+    where (User nm hnd dck dsc oi) = usrs !! usr
+          msg = printf "You have %d buys, %d bonus gold, and %d actions. Your\
+                      \ cards are %s. Which card will you play?"
+                        bys gld acts (show hnd)
+          echeck "/end" = Nothing
+          echeck crd = if crd `elem` hnd then Nothing
+            else Just $ printf "'%s' is not in your hand!" crd
+
 
 -- simulates the buy phase of a user
 buyPhase :: Game -> IO Game
 buyPhase game@Game{turn = Turn{buys = 0}} = return game
-buyPhase game@(Game crds amts usrs (Turn usr buys gold acts) _) = do
-    aPrint game $ printf "You have %d buys and %d gold. Which card will you\
-                         \ buy?\n" buys gold
-    cmd <- hGetLine $ snd h
-    case words cmd of
-        "buy":c:_ -> case M.lookup c amts of
-            Nothing -> do
-                aPrint game $ printf "The card '%s' isn't in this game.\n" c
-                buyPhase game
-            Just 0 -> do
-                aPrint game $ printf "There are no more of '%s' left.\n" c
-                buyPhase game
-            Just amt -> if (cost $ crds <> c) <= gold
-                then do
-                    aPrint game $ printf "Purchased card '%s'.\n" c
-                    oPrint game $ printf "%s purchased '%s'.\n" name c
-                    buyPhase $ buyCard game c amt
-                else do
-                    aPrint game $ printf "%s costs %d, but you only have %d.\n"
-                                         c (cost $ crds <> c) gold
-                    buyPhase game
-        "end":_ -> return game
-        "play":_ -> do
-            aPrint game $ printf "You can't play cards during the buy phase.\n"
-            buyPhase game
-        "hand":_ -> do
-            aPrint game $ printf "Your hand is: %s.\n" (show hand)
-            buyPhase game
-        "list":_ -> do
-            aPrint game $ shopList game
-            buyPhase game
-        ["info"] -> do
-            aPrint game $ "Usage: info <card>\n"
-            buyPhase game
-        "info":c:_ -> do
-            aPrint game $ cardInfo game c
-            buyPhase game
-        "help":_ -> help game >> buyPhase game
-        cmd:_ -> do
-            aPrint game $ "Unknown command: " ++ cmd ++ "\n"
-            help game
-            buyPhase game
-        [] -> buyPhase game
-    where (User name hand deck disc h) = usrs !! usr
+buyPhase game@(Game crds amts usrs (Turn usr bys gld acts) _) = do
+    c <- prompt game usr msg echeck
+    if c == "/end" then return game else do
+        aPrint game $ printf "Purchased card '%s'." c
+        oPrint game $ printf "%s purchased '%s'." name c
+        buyPhase $ buyCard game c
+    where (User name hnd dck dsc oi) = usrs !! usr
+          msg = printf "You have %d buys and %d gold. Which card will you\
+                      \ buy?" bys gld
+          echeck "/end" = Nothing
+          echeck crd = case M.lookup crd amts of
+            Nothing -> Just $ printf "The card '%s' isn't in this game." crd
+            Just 0  -> Just $ printf "There are no more of '%s' left." crd
+            Just _  | (cost $ crds <> crd) <= gld -> Nothing
+                    | otherwise -> Just $
+                        printf "%s costs %d, but you only have %d."
+                               crd (cost $ crds <> crd) gld
 
 -- simulates the entire game, eventually producing the ending state
 simGame :: Game -> IO Game
