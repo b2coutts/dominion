@@ -56,7 +56,8 @@ cardInfo Game{cards = crds} crd = case M.lookup crd crds of
     Just (Card cst valu vp fn dscr) -> unlines $
         let cname = crd ++ case fn of Nothing -> ""
                                       Just _  -> " (ACTION)" in
-            [ cname
+            [ replicate (length cname) '-'
+            , cname
             , replicate (length cname) '-'
             , printf "Cost: %d" cst
             , printf "Value: %d" valu
