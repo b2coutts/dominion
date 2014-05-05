@@ -49,7 +49,32 @@ chapelAcc n game = do
           echeck "/end" = Nothing
           echeck crd = if crd `elem` hnd then Nothing
               else Just $ printf "'%s' is not in your hand!" crd
-    
+
+chancellor :: Game -> IO Game
+chancellor game = do
+    resp <- prompt game (user $ turn $ game) msg echeck
+    let game' = if resp == "n" then game
+        else modActor game $ const u{deck = [], disc = dck++dsc}
+    simpleAct 0 2 0 0 game'
+    where u@(User nm hnd dck dsc oi) = actor game
+          msg = printf "Would you like to discard your deck? [y/n]"
+          echeck "y" = Nothing
+          echeck "n" = Nothing
+          echeck _   = Just "Please type y or n."
+
+workshop :: Game -> IO Game
+workshop game@Game{cards=cs, amounts=as, turn=trn@Turn{gold=gld, buys=bs}} = do
+    c <- prompt game (user $ turn $ game) msg echeck
+    let game' = game{turn=trn{gold=gld + cost (cs <> c), buys=bs+1}}
+    return $ buyCard game' c
+    where msg = "Choose a card costing up to 4 gold to gain."
+          echeck crd = case M.lookup crd as of
+            Nothing -> Just $ printf "'%s' isn't a card in this game!" crd
+            Just 0  -> Just $ printf "There are no more of %s left." crd
+            Just _  -> if (cost $ cs <> crd) <= 4 then Nothing else
+                Just $ printf "%s is too expensive." crd
+
+ 
 
 baseSet :: M.Map String Card
 baseSet = M.fromList
@@ -88,4 +113,8 @@ baseSet = M.fromList
         "Discard any number of cards. +1 Card per card discarded.")
   , ("chapel", Card 2 0 zero (Just $ chapelAcc 0) $ dWrap
         "Trash up to 4 cards from your hand.")
+  , ("chancellor", Card 3 0 zero (Just chancellor) $ "+2 Gold\n\n" ++ dWrap
+        "You may immediately put your deck into your discard pile.")
+  , ("workshop", Card 3 0 zero (Just workshop) $ dWrap
+        "Gain a card costing up to 4 gold")
   ]

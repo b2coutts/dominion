@@ -38,7 +38,7 @@ startingHand = replicate 7 "copper" ++ replicate 3 "estate"
 -- TODO: ask the users to input names/cards instead of hardcoding these values
 -- TODO: add the basic cards to this list as well
 userNames = ["alice", "bob"]
-cardList = ["gardens", "moat", "village", "woodcutter", "smithy", "festival",
+cardList = ["gardens", "moat", "village", "smithy", "chancellor", "workshop",
             "laboratory", "market", "cellar", "chapel"]
 
 -- given a list of usernames and a RNG, produces a list of users and a new RNG
