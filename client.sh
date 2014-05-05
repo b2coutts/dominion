@@ -1,7 +1,7 @@
 #!/bin/bash
 # connect to a running server instance
 
-if [ "$#" -lt 2 ]; then echo "Usage: $0 PID username"; exit 1; fi
+if [ "$#" -lt 2 ]; then echo "Usage: $0 serverID username"; exit 1; fi
 
 tosrv="/tmp/hsdom_$1/${2}_tosrv"
 tousr="/tmp/hsdom_$1/${2}_tousr"

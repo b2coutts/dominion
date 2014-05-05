@@ -59,8 +59,12 @@ newGame fdir rng master names crds = Game{
 
 main = do
     -- set up named pipes
-    fdir <- fmap (\pid -> "/tmp/hsdom_" ++ show pid ++ "/") getProcessID
-    printf "Creating FIFOs in %s...\n" fdir
+    pid <- getProcessID
+    let fdir = "/tmp/hsdom_" ++ show pid ++ "/"
+    printf "Users are %s\n" $ show userNames
+    printf "Server ID is %s.\n" $ show pid
+    printf "Users can connect using `./client.sh %s name`, where name is in the\
+          \ list %s\n" (show pid) (show userNames)
     createDirectory fdir
     ins <- forM userNames (\nm -> do
         createNamedPipe (fdir ++ nm ++ "_tousr") stdFileMode
