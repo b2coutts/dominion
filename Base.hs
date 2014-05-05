@@ -66,7 +66,7 @@ workshop :: Game -> IO Game
 workshop game@Game{cards=cs, amounts=as, turn=trn@Turn{gold=gld, buys=bs}} = do
     c <- prompt game (user $ turn $ game) msg echeck
     let game' = game{turn=trn{gold=gld + cost (cs <> c), buys=bs+1}}
-    return $ buyCard game' c
+    return $ actDec $ buyCard game' c
     where msg = "Choose a card costing up to 4 gold to gain."
           echeck crd = case M.lookup crd as of
             Nothing -> Just $ printf "'%s' isn't a card in this game!" crd

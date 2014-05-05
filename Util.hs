@@ -111,8 +111,13 @@ finalScore game@Game{users=usrs} = unlines $ ["Player              Score"] ++
 
 -- draw a single card for the given user
 drawCard :: Game -> Int -> IO Game
-drawCard game@Game{users=usrs} usr = hPrintf h "You draw a %s.\n" c >>
-    return game{rand = rng', users = usrs'}
+drawCard game@Game{users=usrs} usr
+    | null dck && null dsc = do
+        hPrintf h "You have no cards to draw!\n"
+        return game
+    | otherwise = do
+        hPrintf h "You draw a %s.\n" c
+        return game{rand = rng', users = usrs'}
     where u@(User _ hnd dck dsc (h,_)) = users game !! usr
           ((c:cs, rng'), dsc') = if null dck then (shuf (rand game) dsc, [])
                                              else ((dck, rand game), dsc)
