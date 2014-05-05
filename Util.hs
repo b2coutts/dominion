@@ -92,7 +92,7 @@ cardVP game Card{vps = Right f} = f game
 -- calculates the victory points for a single player in the game
 calcVP :: Game -> Int -> Int
 calcVP game@Game{cards = crds, users = usrs} usr =
-    sum $ map (cardVP game . (crds <>)) allcards
+    sum $ map (cardVP game' . (crds <>)) allcards
     where game' = game{turn = Turn usr 0 0 0}
           allcards = concatMap ($ (usrs !! usr)) [hand, disc, deck]
 
