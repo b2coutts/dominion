@@ -12,34 +12,23 @@ import GHC.IO.Handle.FD
 import Structs
 import Util
 import Engine
+import Config
 
 import Base
 
 masterSet :: Map String Card
 masterSet = unions [baseSet]
 
-baseCards :: [String]
-baseCards = ["copper", "silver", "gold", "curse", "estate", "duchy", "province"]
-
 -- hardcoded amounts for cards that should not have exactly 10 of them
 amtOverrides :: Map String Int
 amtOverrides = fromList
-    [ ("copper"  , 60)
+    [ ("curse"   , 30)
+    , ("copper"  , 60)
     , ("silver"  , 40)
     , ("gold"    , 30)
     , ("estate"  , 24)
     , ("duchy"   , 12)
     ]
-
--- the cards that a user starts with, in no particular order
-startingHand :: [String]
-startingHand = replicate 7 "copper" ++ replicate 3 "estate"
-
--- TODO: ask the users to input names/cards instead of hardcoding these values
--- TODO: add the basic cards to this list as well
-userNames = ["alice", "bob"]
-cardList = ["gardens", "moat", "village", "smithy", "chancellor", "workshop",
-            "laboratory", "market", "cellar", "chapel"]
 
 -- given a list of usernames and a RNG, produces a list of users and a new RNG
 --  fdir - the directory containing all of the named pipes
