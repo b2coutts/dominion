@@ -9,7 +9,6 @@ import Control.Monad
 import Text.Printf
 import GHC.IO.Handle.FD
 
-import Misc
 import Structs
 import Util
 import Engine

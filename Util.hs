@@ -1,10 +1,11 @@
 -- utility code specifically for working with data structures from Structs
 module Util ( aPrint, oPrint, actor, modActor, help, buyCard, isKingdom,
               isOver, calcVP, getWinner, drawCard, drawCards, (<>), flushHand,
-              shopList, discard, cardInfo, prompt, actDec ) where
+              shopList, discard, cardInfo, prompt, actDec, shuf ) where
 
 import GHC.Exts
 import System.IO
+import System.Random
 import Control.Arrow
 import Text.Printf
 import Data.Maybe
@@ -12,7 +13,6 @@ import Data.List
 import qualified Data.Map as M
 
 import Structs
-import Misc
 
 -- TODO: remove this function
 (<>) :: (Ord k, Show k, Show a) => M.Map k a -> k -> a
@@ -175,3 +175,12 @@ prompt game usr msg fn = do
 -- decreases the number of actions in the game by 1
 actDec :: Game -> Game
 actDec game@Game{turn=trn@Turn{acts=n}} = game{turn=trn{acts = n-1}}
+
+-- randomly permutes a list
+-- TODO: is this uniform random? Do I care?
+shuf :: StdGen -> [a] -> ([a], StdGen)
+shuf gen [] = ([], gen)
+shuf gen (x:xs) = (take ind rec ++ [x] ++ drop ind rec, gen'')
+    where (n, gen') = random gen :: (Int, StdGen)
+          ind = mod n $ length xs + 1
+          (rec, gen'') = shuf gen' xs
