@@ -2,7 +2,7 @@
 module Util ( aPrint, oPrint, actor, modActor, help, buyCard, isKingdom,
               isOver, calcVP, getWinner, drawCard, drawCards, (<>), flushHand,
               shopList, discard, cardInfo, prompt, actDec, shuf,
-              finalScore, dWrap, haShow ) where
+              finalScore, dWrap, haShow, banner ) where
 
 import GHC.Exts
 import System.IO
@@ -196,6 +196,14 @@ prompt game usr msg fn = do
 -- decreases the number of actions in the game by 1
 actDec :: Game -> Game
 actDec game@Game{turn=trn@Turn{acts=n}} = game{turn=trn{acts = n-1}}
+
+-- makes an info banner for the active user, displaying their hand, buys, etc
+banner :: Game -> String
+banner game = printf "Buys: %-4d Gold: %-4d Actions: %-4d Total Cards: %d\n\
+                     \Hand: %s\n" bys gld act (length $ hnd ++ dck ++ dsc)
+                                  (haShow hnd)
+    where u@(User _ hnd dck dsc (h,_)) = users game !! usr
+          Turn usr bys gld act = turn game
 
 -- randomly permutes a list
 shuf :: StdGen -> [a] -> ([a], StdGen)

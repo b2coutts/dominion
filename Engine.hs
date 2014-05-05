@@ -23,10 +23,9 @@ actPhase game@(Game crds amts usrs (Turn usr bys gld acts) _)
                 game' <- fn $ discard game c
                 actPhase game'
     where (User nm hnd dck dsc oi) = usrs !! usr
-          msg = dWrap $ printf
-            "You have %d buys, %d bonus gold, and %d actions. Your cards are\
-           \ %s. Which card will you play? Type /end to end your turn, or type\
-           \ /help for a list of commands." bys gld acts (haShow hnd)
+          msg = banner game ++ dWrap
+            "Which card will you play? Type /end to end your turn, or type\
+           \ /help for a list of commands."
           echeck "/end" = Nothing
           echeck crd
             | crd `elem` hnd = case func $ crds <> crd of
@@ -45,9 +44,9 @@ buyPhase game@(Game crds amts usrs (Turn usr bys gld acts) _) = do
         oPrint game $ printf "%s purchased '%s'.\n" name c
         buyPhase $ buyCard game c
     where (User name hnd dck dsc oi) = usrs !! usr
-          msg = dWrap $ printf
-            "You have %d buys and %d gold. Which card will you buy? Type /end\
-           \ to end your turn, or /help for a list of commands." bys gld
+          msg = banner game ++ dWrap
+            "Which card will you buy? Type /end to end your turn, or /help for\
+           \ a list of commands."
           echeck "/end" = Nothing
           echeck crd = case M.lookup crd amts of
             Nothing -> Just $ printf "The card '%s' isn't in this game." crd
