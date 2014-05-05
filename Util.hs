@@ -2,7 +2,7 @@
 module Util ( aPrint, oPrint, actor, modActor, help, buyCard, isKingdom,
               isOver, calcVP, getWinner, drawCard, drawCards, (<>), flushHand,
               shopList, discard, cardInfo, prompt, actDec, shuf,
-              finalScore) where
+              finalScore, dWrap, haShow ) where
 
 import GHC.Exts
 import System.IO
@@ -20,6 +20,20 @@ import Structs
 m <> k = case M.lookup k m of
     Just v  -> v
     Nothing -> error $ "MISS: map is " ++ show m ++ ", key is" ++ show k
+
+-- wraps a string to n characters
+dWrap :: String -> String
+dWrap xs
+    | length xs <= 80 = xs
+    | otherwise = take ind xs ++ "\n" ++ dWrap (drop (ind+1) xs)
+    where ind = maximum $ filter ((==' ') . (xs!!)) $ [0..80]
+
+-- shows a given hand
+haShow :: [String] -> String
+haShow []     = "<none>"
+haShow [x]    = x
+haShow [x,y]  = x ++ ", and " ++ y
+haShow (x:xs) = x ++ ", " ++ haShow xs
 
 -- writes a message to the player whose turn it is
 aPrint :: Game -> String -> IO ()
@@ -168,7 +182,7 @@ prompt game usr msg fn = do
     hPutStrLn out msg
     resp <- hGetLine inp
     case words resp of
-        "/hand":_   -> (aPrint game $ printf "Your hand is: %s.\n" (show hnd))
+        "/hand":_   -> (aPrint game $ printf "Your hand is: %s.\n" (haShow hnd))
                        >> redo
         "/list":_   -> (aPrint game $ shopList game) >> redo
         ["/info"]   -> (aPrint game $ "Usage: /info <card>\n") >> redo

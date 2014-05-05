@@ -23,9 +23,10 @@ actPhase game@(Game crds amts usrs (Turn usr bys gld acts) _)
                 game' <- fn $ discard game c
                 actPhase game'
     where (User nm hnd dck dsc oi) = usrs !! usr
-          msg = printf "You have %d buys, %d bonus gold, and %d actions. Your\
-                      \ cards are %s. Which card will you play?"
-                        bys gld acts (show hnd)
+          msg = dWrap $ printf
+            "You have %d buys, %d bonus gold, and %d actions. Your cards are\
+           \ %s. Which card will you play? Type /end to end your turn, or type\
+           \ /help for a list of commands." bys gld acts (haShow hnd)
           echeck "/end" = Nothing
           echeck crd
             | crd `elem` hnd = case func $ crds <> crd of
@@ -44,8 +45,9 @@ buyPhase game@(Game crds amts usrs (Turn usr bys gld acts) _) = do
         oPrint game $ printf "%s purchased '%s'.\n" name c
         buyPhase $ buyCard game c
     where (User name hnd dck dsc oi) = usrs !! usr
-          msg = printf "You have %d buys and %d gold. Which card will you\
-                      \ buy?" bys gld
+          msg = dWrap $ printf
+            "You have %d buys and %d gold. Which card will you buy? Type /end\
+           \ to end your turn, or /help for a list of commands." bys gld
           echeck "/end" = Nothing
           echeck crd = case M.lookup crd amts of
             Nothing -> Just $ printf "The card '%s' isn't in this game." crd
@@ -72,7 +74,7 @@ simGame game@(Game crds amts usrs trn _)
         game'@Game{turn=trn'@(Turn usr _ gld _)} <- actPhase game
         let endGold = sum $ map (valu . (crds <>)) $ hand $ actor game'
         oPrint game $ printf "%s's action phase is over. Their hand is %s\n"
-                             (name $ actor game) (show $ hand $ actor game)
+                             (name $ actor game) (haShow $ hand $ actor game)
         game'' <- buyPhase game'{turn=trn'{gold = gld + endGold}}
         let draw = flushHand game'' usr
         simGame draw{turn = Turn (mod (usr+1) $ length usrs) 1 0 1}

@@ -28,7 +28,7 @@ cellarAcc n game = do
     where (User nm hnd _ dsc oi) = actor game
           msg = printf "Your hand is %s. You have discarded %d cards. Type the\
                        \ name of the card you wish to discard, or /end to stop\
-                       \ discarding." (show hnd) n
+                       \ discarding." (haShow hnd) n
           echeck "/end" = Nothing
           echeck crd = if crd `elem` hnd then Nothing
             else Just $ printf "'%s' is not in your hand!" crd
@@ -45,7 +45,7 @@ chapelAcc n game = do
     where u@(User nm hnd _ dsc oi) = actor game
           msg = printf "Your hand is %s. You have discarded %d cards. Type the\
                       \ name of the card you wish to discard, or /end to stop\
-                      \ discarding." (show hnd) n
+                      \ discarding." (haShow hnd) n
           echeck "/end" = Nothing
           echeck crd = if crd `elem` hnd then Nothing
               else Just $ printf "'%s' is not in your hand!" crd
@@ -89,12 +89,12 @@ baseSet = M.fromList
 
   -- gardens are weird, yo
   , ("gardens", Card 4 0 (Right $ gardensVP . actor) Nothing $ dWrap
-        "Worth 1 VP for every 10 cards in your deck (rounded down)")
+        "Worth 1 VP for every 10 cards in your deck (rounded down)\n")
 
   -- simple kingdom cards
   , ("moat",       Card 2 0 zero (jsa 0 0 2 0) $ dWrap
         "When another player plays an Attack card, you may reveal this from \
-        \your hand. If you do, you are unaffected by that Attack.")
+        \your hand. If you do, you are unaffected by that Attack.\n")
   , ("village",    Card 3 0 zero (jsa 0 0 1 2) $
         "+1 Card\n+2 Actions\n")
   , ("woodcutter", Card 3 0 zero (jsa 1 2 0 0) $
@@ -110,11 +110,11 @@ baseSet = M.fromList
 
   -- complicated kingdom cards
   , ("cellar", Card 2 0 zero (Just $ cellarAcc 0) $ "+1 Action\n\n" ++ dWrap
-        "Discard any number of cards. +1 Card per card discarded.")
+        "Discard any number of cards. +1 Card per card discarded.\n")
   , ("chapel", Card 2 0 zero (Just $ chapelAcc 0) $ dWrap
         "Trash up to 4 cards from your hand.")
   , ("chancellor", Card 3 0 zero (Just chancellor) $ "+2 Gold\n\n" ++ dWrap
-        "You may immediately put your deck into your discard pile.")
+        "You may immediately put your deck into your discard pile.\n")
   , ("workshop", Card 3 0 zero (Just workshop) $ dWrap
-        "Gain a card costing up to 4 gold")
+        "Gain a card costing up to 4 gold\n")
   ]
