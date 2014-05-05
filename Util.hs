@@ -14,7 +14,7 @@ import qualified Data.Map as M
 
 import Structs
 
--- TODO: remove this function
+-- Like M.!, but with a better error message
 (<>) :: (Ord k, Show k, Show a) => M.Map k a -> k -> a
 m <> k = case M.lookup k m of
     Just v  -> v
@@ -40,12 +40,10 @@ modActor game@Game{users=usrs, turn=Turn{user=usr}} f =
     game{users = take usr usrs ++ [f $ usrs !! usr] ++ drop (usr+1) usrs}
 
 -- prints a list of commands
--- TODO: actually implement
--- TODO: also implement the things it's documenting :P
---   TODO: info command
+-- TODO: finish implementing
 help :: Game -> IO ()
 help game = aPrint game $
-    "TODO. Available commands: end, hand, list, help.\n"
+    "Available commands: /end, /hand, /list, /help.\n"
 
 -- produces a string representing info for a card, or an error message if the
 -- card does not exist
@@ -177,7 +175,6 @@ actDec :: Game -> Game
 actDec game@Game{turn=trn@Turn{acts=n}} = game{turn=trn{acts = n-1}}
 
 -- randomly permutes a list
--- TODO: is this uniform random? Do I care?
 shuf :: StdGen -> [a] -> ([a], StdGen)
 shuf gen [] = ([], gen)
 shuf gen (x:xs) = (take ind rec ++ [x] ++ drop ind rec, gen'')

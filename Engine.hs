@@ -10,7 +10,6 @@ import Structs
 import Util
 
 -- simulates the action phase of a user
--- TODO: pretty-print user's hand
 actPhase :: Game -> IO Game
 actPhase game@(Game crds amts usrs (Turn usr bys gld acts) _)
     | acts == 0 = return game

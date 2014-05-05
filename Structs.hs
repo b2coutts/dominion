@@ -4,7 +4,6 @@ import Data.Map
 import System.Random
 import System.IO
 
--- TODO: human-readable card description
 -- data structure representing a single card in the game
 --  cost - the cost to buy this card from the store
 --  valu - the amount of gold this card provides when left unused in the hand

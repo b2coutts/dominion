@@ -31,7 +31,7 @@ amtOverrides = fromList
     -- , ("potions" , 16)
     , ("estate"  , 24)
     , ("duchy"   , 12)
-    -- , ("colony"  , 12) -- TODO: is this right?
+    -- , ("colony"  , 12)
     -- , ("curse"   , 30)
     ]
 
@@ -74,8 +74,6 @@ newGame fdir rng master names crds = Game{
 
 main = do
     -- set up named pipes
-    -- TODO: make all pipes first, wait for users to connect
-        -- something something block on user reading from output fifos?
     fdir <- fmap (\pid -> "/tmp/hsdom_" ++ show pid ++ "/") getProcessID
     printf "Creating FIFOs in %s...\n" fdir
     createDirectory fdir
