@@ -15,5 +15,5 @@ When you run the server, it will tell you its server ID. Then, each player
     ./client.sh serverID name
 
 where name is their entry in the userNames list in Config.hs. Once everyone is
-connect, the game will begin; you can type /help for a list of special
+connected, the game will begin; you can type /help for a list of special
 commands.
