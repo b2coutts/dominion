@@ -43,8 +43,13 @@ modActor game@Game{users=usrs, turn=Turn{user=usr}} f =
 -- prints a list of commands
 -- TODO: finish implementing
 help :: Game -> IO ()
-help game = aPrint game $
-    "Available commands: /end, /hand, /list, /help.\n"
+help game = aPrint game $ unlines $
+    [ "Available commands:"
+    , "/hand            Displays the cards in your hand"
+    , "/help            Displays this help dialog"
+    , "/info <card>     Tells you what a card does"
+    , "/list            Lists all cards in the shop"
+    ]
 
 -- produces a string representing info for a card, or an error message if the
 -- card does not exist
