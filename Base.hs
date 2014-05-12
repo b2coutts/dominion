@@ -95,10 +95,18 @@ moneylender game@Game{turn=trn@Turn{gold=gld}} = do
 
 remodel :: Game -> IO Game
 remodel game@Game{turn=trn} = do
-    c <- prompt game (user $ turn $ game) msg echeck
-    let gain = cost $ cards game <> c
-    return $ actDec $ modActor game{turn=trn{gold=gold trn + gain}}
-                      (\u@User{hand=hnd} -> u{hand=delete c hnd})
+    c <- prompt game (user trn) msg echeck
+    let lim = (cost $ cards game <> c) + 2
+        game' = modActor game (\u@User{hand=hnd} -> u{hand=delete c hnd})
+        msg2 = printf "Which card would you like to gain? (max: %d gold)" lim
+        echeck2 crd = case M.lookup crd (amounts game) of
+            Nothing -> Just $ printf "'%s' isn't a card in this game!" crd
+            Just 0  -> Just $ printf "There are no more of %s left." crd
+            Just _  -> if (cost $ cards game <> crd) <= lim then Nothing else
+                Just $ printf "%s is too expensive." crd
+    cbuy <- prompt game' (user trn) msg2 echeck2
+    let game'' = game'{turn=trn{gold=gold trn + lim, buys=buys trn + 1}}
+    return $ actDec $ buyCard game'' cbuy
     where msg = printf "Which card would you like to remodel?"
           echeck crd = if crd `elem` (hand $ actor $ game) then Nothing else
             Just $ printf "'%s' is not in your hand!" crd
