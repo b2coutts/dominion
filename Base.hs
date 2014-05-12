@@ -88,8 +88,8 @@ feast game@Game{cards=cs, amounts=as, turn=trn@(Turn usr bys gld act)} = do
 moneylender :: Game -> IO Game
 moneylender game@Game{turn=trn@Turn{gold=gld}} = do
     resp <- prompt game (user $ turn $ game) msg yncheck
-    if resp == "n" then return game else
-        return $ modActor game{turn=trn{gold=gld+3}}
+    if resp == "n" then return $ actDec game else
+        return $ actDec $ modActor game{turn=trn{gold=gld+3}}
                           (\u@User{hand=h} -> u{hand = delete "copper" h})
     where msg = printf "Would you like to discard a copper? [y/n]"
 
@@ -97,7 +97,7 @@ remodel :: Game -> IO Game
 remodel game@Game{turn=trn} = do
     c <- prompt game (user $ turn $ game) msg echeck
     let gain = cost $ cards game <> c
-    return $ modActor game{turn=trn{gold=gold trn + gain}}
+    return $ actDec $ modActor game{turn=trn{gold=gold trn + gain}}
                       (\u@User{hand=hnd} -> u{hand=delete c hnd})
     where msg = printf "Which card would you like to remodel?"
           echeck crd = if crd `elem` (hand $ actor $ game) then Nothing else
@@ -115,7 +115,7 @@ councilroom game@Game{users=us, turn=Turn{user=u}} = do
 
 library :: Game -> IO Game
 library game@Game{cards = cs, turn = Turn{user = usr}}
-    | (length hnd >= 7) || (null dck && null dsc) = return game
+    | (length hnd >= 7) || (null dck && null dsc) = return $ actDec game
     | otherwise = do 
         game' <- drawCard game usr
         let c = head $ hand $ actor game'
@@ -123,8 +123,8 @@ library game@Game{cards = cs, turn = Turn{user = usr}}
             Nothing -> library game'
             Just _  -> do
                 resp <- prompt game usr "Would you like to discard it?" yncheck
-                return $ if resp == "n" then game'
-                    else modActor game' (\u@(User _ (c:cs) _ dsc' _)
+                if resp == "n" then library game'
+                    else library $ modActor game' (\u@(User _ (c:cs) _ dsc' _)
                         -> u{hand = cs, disc = c:dsc'})
     where User nm hnd dck dsc oi = actor game
 
