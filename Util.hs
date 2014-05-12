@@ -1,7 +1,7 @@
 -- utility code specifically for working with data structures from Structs
 module Util ( aPrint, oPrint, actor, modActor, help, buyCard, isKingdom,
-              isOver, calcVP, getWinner, drawCard, drawCards, (<>), flushHand,
-              shopList, discard, cardInfo, prompt, actDec, shuf,
+              isOver, calcVP, getWinner, drawCard, drawCards, (<>), (<!>),
+              flushHand, shopList, discard, cardInfo, prompt, actDec, shuf,
               finalScore, dWrap, haShow, banner ) where
 
 import GHC.Exts
@@ -21,12 +21,19 @@ m <> k = case M.lookup k m of
     Just v  -> v
     Nothing -> error $ "MISS: map is " ++ show m ++ ", key is" ++ show k
 
+-- Like !!, but with a better error message
+(<!>) :: Show a => [a] -> Int -> a
+xs <!> i
+    | i < 0          = error $ printf "LMISS: negative i (%d)!\n" i
+    | i >= length xs = error $ printf "LMISS: i is %d, xs is %s\n" i (show xs)
+    | otherwise      = xs !! i
+
 -- wraps a string to n characters
 dWrap :: String -> String
 dWrap xs
     | length xs <= 80 = xs
     | otherwise = take ind xs ++ "\n" ++ dWrap (drop (ind+1) xs)
-    where ind = maximum $ filter ((==' ') . (xs!!)) $ [0..80]
+    where ind = maximum $ filter ((==' ') . (xs<!>)) $ [0..80]
 
 -- shows a given hand
 haShow :: [String] -> String
@@ -37,22 +44,22 @@ haShow (x:xs) = x ++ ", " ++ haShow xs
 
 -- writes a message to the player whose turn it is
 aPrint :: Game -> String -> IO ()
-aPrint (Game _ _ usrs Turn{user=usr} _) msg = hPutStr (fst $ io $ usrs!!usr) msg
+aPrint (Game _ _ usrs Turn{user=usr} _) msg = hPutStr (fst $ io $ usrs<!>usr) msg
 
 -- writes a message to everyone except the player whose turn it is
 oPrint :: Game -> String -> IO ()
 oPrint (Game _ _ usrs Turn{user=usr} _) msg =
     mapM_ (`hPutStr` msg) others
-    where others = [fst $ io $ usrs!!i | i <- [0..length usrs - 1], i /= usr]
+    where others = [fst $ io $ usrs<!>i | i <- [0..length usrs - 1], i /= usr]
 
 -- gets the player whose turn it is
 actor :: Game -> User
-actor Game{users=usrs, turn=Turn{user=usr}} = usrs !! usr
+actor Game{users=usrs, turn=Turn{user=usr}} = usrs <!> usr
 
 -- given a game state, "apply" the given function to the active user
 modActor :: Game -> (User -> User) -> Game
 modActor game@Game{users=usrs, turn=Turn{user=usr}} f =
-    game{users = take usr usrs ++ [f $ usrs !! usr] ++ drop (usr+1) usrs}
+    game{users = take usr usrs ++ [f $ usrs <!> usr] ++ drop (usr+1) usrs}
 
 -- prints a list of commands
 -- TODO: finish implementing
@@ -113,7 +120,7 @@ calcVP :: Game -> Int -> Int
 calcVP game@Game{cards = crds, users = usrs} usr =
     sum $ map (cardVP game' . (crds <>)) allcards
     where game' = game{turn = Turn usr 0 0 0}
-          allcards = concatMap ($ (usrs !! usr)) [hand, disc, deck]
+          allcards = concatMap ($ (usrs <!> usr)) [hand, disc, deck]
 
 -- calculates victory points and produces the winner or the game, and their VPs
 -- TODO: ties
@@ -126,7 +133,7 @@ getWinner game =
 finalScore :: Game -> String
 finalScore game@Game{users=usrs} = unlines $ ["Player              Score"] ++
     map (\(nm,vp) -> printf "%-20s%d" nm vp) (sortWith snd scores)
-    where scores = [(name $ usrs!!i, calcVP game i) | i <- [0..length usrs - 1]]
+    where scores = [(name $ usrs<!>i, calcVP game i) | i <- [0..length usrs - 1]]
 
 -- draw a single card for the given user
 drawCard :: Game -> Int -> IO Game
@@ -137,7 +144,7 @@ drawCard game@Game{users=usrs} usr
     | otherwise = do
         hPrintf h "You draw a %s.\n" c
         return game{rand = rng', users = usrs'}
-    where u@(User _ hnd dck dsc (h,_)) = users game !! usr
+    where u@(User _ hnd dck dsc (h,_)) = users game <!> usr
           ((c:cs, rng'), dsc') = if null dck then (shuf (rand game) dsc, [])
                                              else ((dck, rand game), dsc)
           usrs' = take usr usrs ++ [u{hand = c:hnd, deck = cs, disc = dsc'}] ++
@@ -191,7 +198,7 @@ prompt game usr msg fn = do
         _ -> case fn resp of Nothing  -> return resp
                              Just err -> hPutStrLn out err >> redo
     where redo = prompt game usr msg fn
-          User nm hnd dck dsc (out, inp) = users game !! usr
+          User nm hnd dck dsc (out, inp) = users game <!> usr
 
 -- decreases the number of actions in the game by 1
 actDec :: Game -> Game
@@ -202,7 +209,7 @@ banner :: Game -> String
 banner game = printf "Buys: %-4d Gold: %-4d Actions: %-4d Total Cards: %d\n\
                      \Hand: %s\n" bys gld act (length $ hnd ++ dck ++ dsc)
                                   (haShow hnd)
-    where u@(User _ hnd dck dsc (h,_)) = users game !! usr
+    where u@(User _ hnd dck dsc (h,_)) = users game <!> usr
           Turn usr bys gld act = turn game
 
 -- randomly permutes a list

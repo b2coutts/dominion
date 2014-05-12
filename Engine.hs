@@ -22,7 +22,7 @@ actPhase game@(Game crds amts usrs (Turn usr bys gld acts) _)
                 oPrint game $ printf "%s uses '%s'.\n" nm c
                 game' <- fn $ discard game c
                 actPhase game'
-    where (User nm hnd dck dsc oi) = usrs !! usr
+    where (User nm hnd dck dsc oi) = usrs <!> usr
           msg = banner game ++ dWrap
             "Which card will you play? Type /end to end your turn, or type\
            \ /help for a list of commands."
@@ -43,7 +43,7 @@ buyPhase game@(Game crds amts usrs (Turn usr bys gld acts) _) = do
         aPrint game $ printf "Purchased card '%s'.\n" c
         oPrint game $ printf "%s purchased '%s'.\n" name c
         buyPhase $ buyCard game c
-    where (User name hnd dck dsc oi) = usrs !! usr
+    where (User name hnd dck dsc oi) = usrs <!> usr
           msg = banner game ++ dWrap
             "Which card will you buy? Type /end to end your turn, or /help for\
            \ a list of commands."
@@ -63,7 +63,7 @@ simGame game@(Game crds amts usrs trn _)
                         ig = game{turn=trn{user=usri}} in do
         aPrint ig $ printf "Congrats! You won with %d victory points!\n" vp
         oPrint ig $ printf "%s won the game with %d victory points!\n"
-                           (name $ usrs !! usri) vp
+                           (name $ usrs <!> usri) vp
         aPrint ig $ finalScore ig
         oPrint ig $ finalScore ig
         return game
