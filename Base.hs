@@ -110,7 +110,7 @@ drawOther g (i:is) = drawCard g i >>= flip drawOther is
 
 councilroom :: Game -> IO Game
 councilroom game@Game{users=us, turn=Turn{user=u}} = do
-    game' <- drawOther game $ [0..length $ us] \\ [u]
+    game' <- drawOther game $ [0..length us - 1] \\ [u]
     simpleAct 1 0 4 0 game'
 
 library :: Game -> IO Game
