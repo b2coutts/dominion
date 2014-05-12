@@ -176,11 +176,11 @@ advAcc n game@Game{cards = cs} = do
     game' <- drawCard game $ user $ turn game
     let User nm hnd dck dsc oi = actor game'
         c = head hnd
-    oPrint game $ printf "%s drew a %s\n" 
-    advAcc (if valu (cs <> c) >= 0 then n-1 else n) game'
+    oPrint game $ printf "%s drew a %s\n" nm c
+    advAcc (if valu (cs <> c) > 0 then n-1 else n) game'
 
 adventurer :: Game -> IO Game
-adventurer game = advAcc 2 game
+adventurer game = fmap actDec $ advAcc 2 game
 
 baseSet :: M.Map String Card
 baseSet = M.fromList
