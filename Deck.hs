@@ -1,5 +1,5 @@
 -- code for constructing decks
-module Deck ( simpleAct, jsa, dWrap ) where
+module Deck ( simpleAct, jsa, dWrap, yncheck ) where
 
 import Structs
 import Util
@@ -12,3 +12,9 @@ simpleAct b g d a game@Game{turn=Turn usr buys gold acts} =
 -- wrap the above in a Just
 jsa :: Int -> Int -> Int -> Int -> Maybe (Game -> IO Game)
 jsa b g d a = Just (\game -> simpleAct b g d a game)
+
+-- an error checker for prompt that checks for a y/n response
+yncheck :: String -> Maybe String
+yncheck "y" = Nothing
+yncheck "n" = Nothing
+yncheck _   = Just "Please type y or n."

@@ -162,8 +162,8 @@ flushHand game@Game{rand=rng} usr = modActor game{rand = rng'} $ const
 -- create a human-readable list of all cards being sold
 shopList :: Game -> String
 shopList (Game crds amts _ _ _) = "Card                Cost    Amount\n" ++
-    concatMap (\c -> printf "%-20s%-8d%d\n" c (cost $ crds M.! c) (amts M.! c))
-              (sortWith (cost . (crds M.!)) (M.keys amts))
+    concatMap (\c -> printf "%-20s%-8d%d\n" c (cost $ crds <> c) (amts <> c))
+              (sortWith (cost . (crds <>)) (M.keys amts))
 
 -- discards one of the given card from the active player's hand
 discard :: Game -> String -> Game

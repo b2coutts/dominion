@@ -52,15 +52,12 @@ chapelAcc n game = do
 
 chancellor :: Game -> IO Game
 chancellor game = do
-    resp <- prompt game (user $ turn $ game) msg echeck
+    resp <- prompt game (user $ turn $ game) msg yncheck
     let game' = if resp == "n" then game
         else modActor game $ const u{deck = [], disc = dck++dsc}
     simpleAct 0 2 0 0 game'
     where u@(User nm hnd dck dsc oi) = actor game
           msg = printf "Would you like to discard your deck? [y/n]"
-          echeck "y" = Nothing
-          echeck "n" = Nothing
-          echeck _   = Just "Please type y or n."
 
 workshop :: Game -> IO Game
 workshop game@Game{cards=cs, amounts=as, turn=trn@Turn{gold=gld, buys=bs}} = do
@@ -74,7 +71,62 @@ workshop game@Game{cards=cs, amounts=as, turn=trn@Turn{gold=gld, buys=bs}} = do
             Just _  -> if (cost $ cs <> crd) <= 4 then Nothing else
                 Just $ printf "%s is too expensive." crd
 
- 
+-- assumes the given game state has a feast at the top of the discard pile
+feast :: Game -> IO Game
+feast game@Game{cards=cs, amounts=as, turn=trn@(Turn usr bys gld act)} = do
+    c <- prompt game (user $ turn $ game) msg echeck
+    let game'  = game{turn=trn{gold=gld + cost (cs <> c), buys=bys+1}}
+        game'' = modActor game' (\u@User{disc=d} -> u{disc=tail d})
+    return $ actDec $ buyCard game'' c
+    where msg = "Choose a card costing up to 5 gold to gain."
+          echeck crd = case M.lookup crd as of
+            Nothing -> Just $ printf "'%s' isn't a card in this game!" crd
+            Just 0  -> Just $ printf "There are no more of %s left." crd
+            Just _  -> if (cost $ cs <> crd) <= 5 then Nothing else
+                Just $ printf "%s is too expensive." crd
+    
+moneylender :: Game -> IO Game
+moneylender game@Game{turn=trn@Turn{gold=gld}} = do
+    resp <- prompt game (user $ turn $ game) msg yncheck
+    if resp == "n" then return game else
+        return $ modActor game{turn=trn{gold=gld+3}}
+                          (\u@User{hand=h} -> u{hand = delete "copper" h})
+    where msg = printf "Would you like to discard a copper? [y/n]"
+
+remodel :: Game -> IO Game
+remodel game@Game{turn=trn} = do
+    c <- prompt game (user $ turn $ game) msg echeck
+    let gain = cost $ cards game <> c
+    return $ modActor game{turn=trn{gold=gold trn + gain}}
+                      (\u@User{hand=hnd} -> u{hand=delete c hnd})
+    where msg = printf "Which card would you like to remodel?"
+          echeck crd = if crd `elem` (hand $ actor $ game) then Nothing else
+            Just $ printf "'%s' is not in your hand!" crd
+
+-- helper function for councilroom; draws a card for a list of user indices
+drawOther :: Game -> [Int] -> IO Game
+drawOther g []     = return g
+drawOther g (i:is) = drawCard g i >>= flip drawOther is
+
+councilroom :: Game -> IO Game
+councilroom game@Game{users=us, turn=Turn{user=u}} = do
+    game' <- drawOther game $ [0..length $ us] \\ [u]
+    simpleAct 1 0 4 0 game'
+
+library :: Game -> IO Game
+library game@Game{cards = cs, turn = Turn{user = usr}}
+    | (length hnd >= 7) || (null dck && null dsc) = return game
+    | otherwise = do 
+        game' <- drawCard game usr
+        let c = head $ hand $ actor game'
+        case (func $ cs <> c) of
+            Nothing -> library game'
+            Just _  -> do
+                resp <- prompt game usr "Would you like to discard it?" yncheck
+                return $ if resp == "n" then game'
+                    else modActor game' (\u@(User _ (c:cs) _ dsc' _)
+                        -> u{hand = cs, disc = c:dsc'})
+    where User nm hnd dck dsc oi = actor game
 
 baseSet :: M.Map String Card
 baseSet = M.fromList
@@ -117,4 +169,20 @@ baseSet = M.fromList
         "You may immediately put your deck into your discard pile.\n")
   , ("workshop", Card 3 0 zero (Just workshop) $ dWrap
         "Gain a card costing up to 4 gold\n")
+  , ("feast", Card 4 0 zero (Just feast) $ dWrap
+        "Trash this card. Gain a card costing up to 5 Gold.\n")
+  , ("moneylender", Card 4 0 zero (Just moneylender) $ dWrap
+        "Trash a Copper card from your hand. If you do, +3 Gold.\n")
+  , ("remodel", Card 4 0 zero (Just remodel) $ dWrap
+        "Trash a card from your hand. Gain a card costing up to 2 gold more\
+       \ than the trashed card.\n")
+  -- TODO throne room ;_;
+  , ("councilroom", Card 5 0 zero (Just councilroom) $ "+4 Cards\n+1 Buy\n\n" ++
+        dWrap "Each other player draws a card.")
+  , ("library", Card 5 0 zero (Just library) $ dWrap
+        "Draw until you have 7 cards in hand. You may set aside any Action\
+       \ cards drawn this way, as you draw them; discard the set aside cards\
+       \ after you finish drawing.\n")
+
+  -- TODO attack cards
   ]

@@ -9,5 +9,5 @@ userNames :: [String]
 userNames = ["alice", "bob"]
 
 -- list of the kingdom cards being used in the game
-cardList = ["gardens", "moat", "village", "smithy", "chancellor", "workshop",
-            "laboratory", "market", "cellar", "chapel"]
+cardList = ["feast", "moneylender", "remodel", "councilroom", "library",
+            "smithy", "village", "market", "cellar", "workshop"]
