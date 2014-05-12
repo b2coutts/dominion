@@ -91,7 +91,7 @@ moneylender game@Game{turn=trn@Turn{gold=gld}} = do
     if resp == "n" then return $ actDec game else
         return $ actDec $ modActor game{turn=trn{gold=gld+3}}
                           (\u@User{hand=h} -> u{hand = delete "copper" h})
-    where msg = printf "Would you like to discard a copper? [y/n]"
+    where msg = printf "Would you like to trash a copper? [y/n]"
 
 remodel :: Game -> IO Game
 remodel game@Game{turn=trn} = do
