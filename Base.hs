@@ -137,6 +137,37 @@ library game@Game{cards = cs, turn = Turn{user = usr}}
                         -> u{hand = cs, disc = c:dsc'})
     where User nm hnd dck dsc oi = actor game
 
+mine :: Game -> IO Game
+mine game@Game{cards = cs, turn = trn}
+    | null $ filter ((>0) . valu . (cs<>)) (hand $ actor game) = do
+        aPrint game "You have no treasure cards to trash!\n"
+        oPrint game $ printf "%s has no treasure cards to trash.\n"
+                             (name $ actor game)
+        return $ actDec game
+    | otherwise = do
+        c <- prompt game (user trn) msg echeck
+        let lim = (cost $ cs <> c) + 3
+            game' = modActor game (\u@User{hand=hnd} -> u{hand=delete c hnd})
+            msg2 = printf "Which treasure would you like to gain? (max: %d gold)"
+                          lim
+            echeck2 crd = case M.lookup crd (amounts game) of
+                Nothing -> Just $ printf "'%s' isn't a card in this game!" crd
+                Just 0  -> Just $ printf "There are no more of %s left." crd
+                Just _  -> if (valu $ cs <> crd) <= 0
+                            then Just $ printf "%s is not a treasure card!" crd
+                            else if (cost $ cs <> crd) <= lim then Nothing else
+                                Just $ printf "%s is too expensive." crd
+        cbuy <- prompt game' (user trn) msg2 echeck2
+        let game'' = game'{turn=trn{gold = gold trn + cost (cs <> cbuy),
+                                    buys = buys trn + 1}}
+        return $ actDec $ buyCard game'' cbuy
+    where User nm hnd dck dsc oi = actor game
+          msg = "Which treasure would you like to trash?"
+          echeck crd
+            | not $ elem crd hnd = Just $ printf "%s is not in your hand." crd
+            | (valu $ cs<>crd) <= 0 = Just $ printf "%s is not a treasure." crd
+            | otherwise = Nothing
+
 baseSet :: M.Map String Card
 baseSet = M.fromList
   -- basic cards
@@ -192,6 +223,9 @@ baseSet = M.fromList
         "Draw until you have 7 cards in hand. You may set aside any Action\
        \ cards drawn this way, as you draw them; discard the set aside cards\
        \ after you finish drawing.\n")
+  , ("mine", Card 5 0 zero (Just mine) $ dWrap
+        "Trash a Treasure card from your hand. Gain a Treasure card costing up\
+       \ to 3 gold more; put it into your hand.\n")
 
   -- TODO attack cards
   ]
