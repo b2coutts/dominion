@@ -94,7 +94,7 @@ moneylender game@Game{turn=trn@Turn{gold=gld}} = do
     where msg = printf "Would you like to trash a copper? [y/n]"
 
 remodel :: Game -> IO Game
-remodel game@Game{turn=trn} = do
+remodel game@Game{cards = cs, turn = trn} = do
     c <- prompt game (user trn) msg echeck
     let lim = (cost $ cards game <> c) + 2
         game' = modActor game (\u@User{hand=hnd} -> u{hand=delete c hnd})
@@ -105,7 +105,8 @@ remodel game@Game{turn=trn} = do
             Just _  -> if (cost $ cards game <> crd) <= lim then Nothing else
                 Just $ printf "%s is too expensive." crd
     cbuy <- prompt game' (user trn) msg2 echeck2
-    let game'' = game'{turn=trn{gold=gold trn + lim, buys=buys trn + 1}}
+    let game'' = game'{turn=trn{gold=gold trn + (cost $ cs <> cbuy),
+                                buys=buys trn + 1}}
     return $ actDec $ buyCard game'' cbuy
     where msg = printf "Which card would you like to remodel?"
           echeck crd = if crd `elem` (hand $ actor $ game) then Nothing else
