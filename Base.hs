@@ -122,7 +122,8 @@ library game@Game{cards = cs, turn = Turn{user = usr}}
         case (func $ cs <> c) of
             Nothing -> library game'
             Just _  -> do
-                resp <- prompt game usr "Would you like to discard it?" yncheck
+                resp <- prompt game usr "Would you like to discard it? y/n"
+                               yncheck
                 if resp == "n" then library game'
                     else library $ modActor game' (\u@(User _ (c:cs) _ dsc' _)
                         -> u{hand = cs, disc = c:dsc'})
