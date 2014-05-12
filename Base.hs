@@ -169,6 +169,19 @@ mine game@Game{cards = cs, turn = trn}
             | (valu $ cs<>crd) <= 0 = Just $ printf "%s is not a treasure." crd
             | otherwise = Nothing
 
+-- helper function for adventurer; n is the number of treasure cards drawn
+advAcc :: Int -> Game -> IO Game
+advAcc 0 game = return game
+advAcc n game@Game{cards = cs} = do
+    game' <- drawCard game $ user $ turn game
+    let User nm hnd dck dsc oi = actor game'
+        c = head hnd
+    oPrint game $ printf "%s drew a %s\n" 
+    advAcc (if valu (cs <> c) >= 0 then n-1 else n) game'
+
+adventurer :: Game -> IO Game
+adventurer game = advAcc 2 game
+
 baseSet :: M.Map String Card
 baseSet = M.fromList
   -- basic cards
@@ -227,6 +240,10 @@ baseSet = M.fromList
   , ("mine", Card 5 0 zero (Just mine) $ dWrap
         "Trash a Treasure card from your hand. Gain a Treasure card costing up\
        \ to 3 gold more; put it into your hand.\n")
+  , ("adventurer", Card 6 0 zero (Just adventurer) $ dWrap
+        "Reveal cards from your deck until you reveal 2 Treasure cards. Put\
+       \ those Treasure cards into your hand and discard the other revealed\
+       \ cards.\n")
 
   -- TODO attack cards
   ]

@@ -10,4 +10,4 @@ userNames = ["alice", "bob"]
 
 -- list of the kingdom cards being used in the game
 cardList = ["feast", "moneylender", "remodel", "councilroom", "library",
-            "smithy", "village", "market", "cellar", "mine"]
+            "smithy", "village", "market", "adventurer", "mine"]
