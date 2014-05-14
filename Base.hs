@@ -227,6 +227,38 @@ milAtk g u
 militia :: Game -> IO Game
 militia game = mapOther milAtk game >>= simpleAct 0 2 0 0
 
+-- attacking helper function for spy; first arg is the user of spy
+spyAtk :: Int -> Game -> Int -> IO Game
+spyAtk m g u
+    | any (=="moat") hnd && m /= u = do
+        iPrint g u $ printf "%s has a moat.\n" nm
+        return g
+    | otherwise = do
+        hPrintf (fst oi) "You reveal a %s.\n" c
+        iPrint g u $ printf "%s revealed a %s.\n" nm c
+        resp <- prompt g m (printf "Make %s discard the %s? y/n" nm c) yncheck
+        case resp of
+            "y" -> do
+                iPrint g u $ printf "%s made %s discard their %s.\n" mnm nm c
+                hPrintf (fst oi) "%s made you discard your %s.\n" mnm c
+                return $ modUser g u $ const usr{disc = c:dsc, deck = cs}
+            "n" -> do
+                iPrint g u $ printf "%s made %s put their %s on their deck.\n"
+                                    mnm nm c
+                hPrintf (fst oi) "%s made you put your %s on your deck.\n" mnm c
+                return g
+    where mnm = name $ users g <!> m
+          usr@(User nm hnd dck dsc oi) = users g <!> u
+          ((c:cs, rng'), dsc') | null dck   = (shuf (rand g) dsc, [])
+                               | otherwise  = ((dck, rand g), dsc)
+        
+
+spy :: Game -> IO Game
+spy g = do
+    let act = user $ turn g
+    g' <- simpleAct 0 0 1 1 g
+    mapUser (spyAtk act) [0..length (users g) - 1] g'
+
 baseSet :: M.Map String Card
 baseSet = M.fromList
   -- basic cards
@@ -297,4 +329,7 @@ baseSet = M.fromList
        \ reveals a hand with no Victory cards).\n")
   , ("militia", Card 4 0 zero (Just militia) $ "+2 Gold\n\n" ++ dWrap
         "Each other player discards down to 3 cards in his hand.\n")
+  , ("spy", Card 4 0 zero (Just spy) $ "+1 Card\n+1 Action\n\n" ++ dWrap
+        "Each player (including you) reveals the top card of his deck and\
+       \ either discards it or puts it back, your choice.\n")
   ]
