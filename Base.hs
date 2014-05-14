@@ -182,6 +182,31 @@ advAcc n game@Game{cards = cs} = do
 adventurer :: Game -> IO Game
 adventurer game = fmap actDec $ advAcc 2 game
 
+bureaucrat :: Game -> IO Game
+bureaucrat game@Game{cards = cs}
+    | otherwise = do
+        game' <- mapOther f game
+        return $ actDec $ modActor game' (\u -> u{deck = "silver" : deck u})
+    where f g u
+            | any (=="moat") hnd = do
+                iPrint g u $ printf "%s has a moat.\n" nm
+                return g
+            | any (isVictory . (cs<>)) hnd = do
+                c <- prompt g u msg echeck
+                iPrint g u $ printf "%s places a %s on his deck.\n" nm c
+                return $ modUser g u $ const $ User nm (delete c hnd) (c:dck)
+                                                   dsc oi
+            | otherwise = do
+                iPrint g u $ printf "%s has no victory cards: %s\n"
+                                    nm (show hnd)
+                return g
+            where User nm hnd dck dsc oi = users g <!> u
+                  msg = "Choose a victory card to place on top of your deck."
+                  echeck c
+                    | not $ c `elem` hnd = Just $ printf "You don't have %s!" c
+                    | isVictory $ cs <> c = Nothing
+                    | otherwise = Just $ printf "%s is not a victory card!" c
+
 baseSet :: M.Map String Card
 baseSet = M.fromList
   -- basic cards
@@ -246,4 +271,8 @@ baseSet = M.fromList
        \ cards.\n")
 
   -- TODO attack cards
+  , ("bureaucrat", Card 4 0 zero (Just bureaucrat) $ dWrap
+        "Gain a Silver card; put it on top of your deck. Each other player\
+       \ reveals a Victory card from his hand and puts it on his deck (or\
+       \ reveals a hand with no Victory cards).\n")
   ]

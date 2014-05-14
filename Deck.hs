@@ -1,5 +1,5 @@
 -- code for constructing decks
-module Deck ( simpleAct, jsa, dWrap, yncheck ) where
+module Deck ( simpleAct, jsa, dWrap, yncheck, mapUser, mapOther ) where
 
 import Structs
 import Util
@@ -18,3 +18,15 @@ yncheck :: String -> Maybe String
 yncheck "y" = Nothing
 yncheck "n" = Nothing
 yncheck _   = Just "Please type y or n."
+
+-- applies a given (Game -> Int -> IO Game) function iteratively to a game
+-- state, given a list of users (second arg to f is a user index)
+mapUser :: (Game -> Int -> IO Game) -> [Int] -> Game -> IO Game
+mapUser _ [] game     = return game
+mapUser f (u:us) game = f game u >>= mapUser f us
+
+-- maps a given (Game -> Int -> IO Game) function over all non-actor players,
+-- using mapUser
+mapOther :: (Game -> Int -> IO Game) -> Game -> IO Game
+mapOther f game@Game{users = usrs, turn=Turn{user = usr}} =
+    mapUser f [i | i <- [0..length usrs - 1], i /= usr] game

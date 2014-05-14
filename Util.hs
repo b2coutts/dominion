@@ -1,8 +1,8 @@
 -- utility code specifically for working with data structures from Structs
-module Util ( aPrint, oPrint, actor, modActor, help, buyCard, isKingdom,
-              isOver, calcVP, getWinner, drawCard, drawCards, (<>), (<!>),
-              flushHand, shopList, discard, cardInfo, prompt, actDec, shuf,
-              finalScore, dWrap, haShow, banner ) where
+module Util ( aPrint, oPrint, iPrint, actor, modActor, modUser, help, buyCard,
+              isKingdom, isOver, calcVP, getWinner, drawCard, drawCards, (<>),
+              (<!>), flushHand, shopList, discard, cardInfo, prompt, actDec,
+              shuf, finalScore, dWrap, haShow, banner, isVictory ) where
 
 import GHC.Exts
 import System.IO
@@ -52,9 +52,19 @@ oPrint (Game _ _ usrs Turn{user=usr} _) msg =
     mapM_ (`hPutStr` msg) others
     where others = [fst $ io $ usrs<!>i | i <- [0..length usrs - 1], i /= usr]
 
+-- writes a message to everyone except the given user
+iPrint :: Game -> Int -> String -> IO ()
+iPrint Game{users=us} u msg = mapM_ (`hPutStr` msg) others
+    where others = [fst $ io $ us <!> i | i <- [0..length us - 1], i /= u]
+
 -- gets the player whose turn it is
 actor :: Game -> User
 actor Game{users=usrs, turn=Turn{user=usr}} = usrs <!> usr
+
+-- modActor, but instead modify a user by index
+modUser :: Game -> Int -> (User -> User) -> Game
+modUser game@Game{users=usrs} usr f =
+    game{users = take usr usrs ++ [f $ usrs <!> usr] ++ drop (usr+1) usrs}
 
 -- given a game state, "apply" the given function to the active user
 modActor :: Game -> (User -> User) -> Game
@@ -103,6 +113,11 @@ buyCard game@Game{turn=trn@(Turn usr bys gld act), amounts = amts} c =
 isKingdom :: String -> Bool
 isKingdom str = not $ elem str ["copper", "silver", "gold", "curse", "estate",
                                 "duchy", "province"]
+
+-- Checks whether or not a given card is a victory card
+isVictory :: Card -> Bool
+isVictory Card{vps = (Left n)}  = n > 0
+isVictory Card{vps = (Right _)} = True
 
 -- true iff the given game is over (endgame conditions have been met)
 isOver :: Game -> Bool
@@ -189,16 +204,16 @@ prompt game usr msg fn = do
     hPutStrLn out msg
     resp <- hGetLine inp
     case words resp of
-        "/hand":_   -> (aPrint game $ printf "Your hand is: %s.\n" (haShow hnd))
-                       >> redo
-        "/list":_   -> (aPrint game $ shopList game) >> redo
-        ["/info"]   -> (aPrint game $ "Usage: /info <card>\n") >> redo
-        "/info":c:_ -> (aPrint game $ cardInfo game c) >> redo
+        "/hand":_   -> uPrint (printf "Your hand is %s.\n" (haShow hnd)) >> redo
+        "/list":_   -> uPrint (shopList game) >> redo
+        ["/info"]   -> uPrint "Usage: /info <card>\n" >> redo
+        "/info":c:_ -> uPrint (cardInfo game c) >> redo
         "/help":_   -> help game >> redo
         _ -> case fn resp of Nothing  -> return resp
                              Just err -> hPutStrLn out err >> redo
     where redo = prompt game usr msg fn
           User nm hnd dck dsc (out, inp) = users game <!> usr
+          uPrint = hPutStr out
 
 -- decreases the number of actions in the game by 1
 actDec :: Game -> Game
