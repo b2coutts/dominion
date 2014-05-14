@@ -207,6 +207,26 @@ bureaucrat game@Game{cards = cs}
                     | isVictory $ cs <> c = Nothing
                     | otherwise = Just $ printf "%s is not a victory card!" c
 
+-- helper function for militia; attacks a given player
+milAtk :: Game -> Int -> IO Game
+milAtk g u
+    | any (=="moat") hnd    = do
+        iPrint g u $ printf "%s has a moat.\n" nm
+        return g
+    | length hnd <= 3       = do
+        iPrint g u $ printf "%s has finished discarding.\n" nm
+        hPrintf (fst oi) "You have finished discarding.\n"
+        return g
+    | otherwise             = do
+        c <- prompt g u "Choose a card to discard." echeck
+        milAtk (modUser g u $ const $ User nm (delete c hnd) dck (c:dsc) oi) u
+    where User nm hnd dck dsc oi = users g <!> u
+          echeck c | c `elem` hnd   = Nothing
+                   | otherwise      = Just $ printf "You don't have %s!" c
+
+militia :: Game -> IO Game
+militia game = mapOther milAtk game >>= simpleAct 0 2 0 0
+
 baseSet :: M.Map String Card
 baseSet = M.fromList
   -- basic cards
@@ -275,4 +295,6 @@ baseSet = M.fromList
         "Gain a Silver card; put it on top of your deck. Each other player\
        \ reveals a Victory card from his hand and puts it on his deck (or\
        \ reveals a hand with no Victory cards).\n")
+  , ("militia", Card 4 0 zero (Just militia) $ "+2 Gold\n\n" ++ dWrap
+        "Each other player discards down to 3 cards in his hand.\n")
   ]
