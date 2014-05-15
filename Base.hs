@@ -4,6 +4,7 @@ module Base ( baseSet ) where
 import qualified Data.Map as M
 import Data.List
 import Text.Printf
+import System.IO
 
 import Deck
 import Structs
@@ -304,6 +305,18 @@ thiefAtk m g@Game{cards=crds} u
 thief :: Game -> IO Game
 thief game = fmap actDec $ mapOther (thiefAtk $ user $ turn game) game
 
+witchAtk :: Game -> Int -> IO Game
+witchAtk game@Game{users=us} u
+    | any (=="moat") $ hand $ us <!> u = do
+        iPrint game u $ printf "%s has a moat.\n" (name $ us <!> u)
+        return game
+    | otherwise = do
+        hPutStr (fst $ io $ us <!> u) "You have gained a curse.\n"
+        return $ modUser game u (\x -> x{disc = "curse" : disc x})
+
+witch :: Game -> IO Game
+witch game = mapOther witchAtk game >>= simpleAct 0 0 2 0
+
 baseSet :: M.Map String Card
 baseSet = M.fromList
   -- basic cards
@@ -367,7 +380,6 @@ baseSet = M.fromList
        \ those Treasure cards into your hand and discard the other revealed\
        \ cards.\n")
 
-  -- TODO attack cards
   , ("bureaucrat", Card 4 0 zero (Just bureaucrat) $ dWrap
         "Gain a Silver card; put it on top of your deck. Each other player\
        \ reveals a Victory card from his hand and puts it on his deck (or\
@@ -382,4 +394,6 @@ baseSet = M.fromList
        \ revealed any Treasure cards, they trash one of them that you choose.\
        \ You may gain any or all of these trashed cards. They discard the\
        \ other revealed cards.\n")
+  , ("witch", Card 5 0 zero (Just witch) $ "+2 Cards\n\n" ++ dWrap
+        "Each other player gains a Curse card.\n")
   ]
