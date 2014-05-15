@@ -259,6 +259,51 @@ spy g = do
     g' <- simpleAct 0 0 1 1 g
     mapUser (spyAtk act) [0..length (users g) - 1] g'
 
+thiefAtk :: Int -> Game -> Int -> IO Game
+thiefAtk m g@Game{cards=crds} u
+    | any (=="moat") hnd = do
+        iPrint g u $ printf "%s has a moat.\n" nm
+        return g
+    | otherwise = do
+        iPrint g u $ printf "%s reveals %s and %s.\n" nm c d
+        hPrintf (fst oi) "You reveal %s and %s.\n" c d
+        case () of _ | valu (crds <> c) > 0 && valu (crds <> d) > 0 -> do
+                        crd  <- prompt g m "Which treasure will you trash?" ech
+                        keep <- fmap (=="y") $ prompt g m (printf "Will you\
+                                                \ keep the %s?" crd) yncheck
+                        iPrint g m $ printf "%s %ss the %s.\n" mnm (if keep then
+                                            "keep" else "trashe") crd
+                        let (rm,st) = if crd==c then (c,d) else (d,c)
+                            g'      = modUser gr u (\x ->
+                                        x{deck = ds, disc = st : disc x})
+                            ch u@User{disc=p}=u{disc= if keep then rm:p else p}
+                        return $ modActor g' ch
+                     | valu (crds <> c) > 0 || valu (crds <> d) > 0 -> do
+                        let (rm,st) = if valu (crds<>c)>0 then (c,d) else (d,c)
+                        keep <- fmap (=="y") $ prompt g m (printf "Will you\
+                                                \ keep the %s?" rm) yncheck
+                        iPrint g m $ printf "%s %ss the %s.\n" mnm (if keep then
+                                            "keep" else "trashe") rm
+                        let g' = modUser gr u (\x ->
+                                    x{deck = ds, disc = st : disc x})
+                            ch u@User{disc=p}=u{disc = if keep then c:p else p}
+                        return $ modActor g' ch
+                     | otherwise -> return $ modUser gr u (\x -> x{deck = ds})
+                     where ech cr
+                            | cr `elem` [c,d] = Nothing
+                            | True = Just$printf "You must select %s or %s." c d
+    where mst = users g <!> u
+          mnm = name $ users g <!> m
+          usr@(User nm hnd dck dsc oi) = users g <!> u
+          ((c:cs, rng'), dsc') | null dck   = (shuf (rand g) dsc, [])
+                               | otherwise  = ((dck, rand g), dsc)
+          ((d:ds, rng3), dsc3) | null cs    = (shuf rng' cs, [])
+                               | otherwise  = ((cs, rng'), dsc')
+          gr = g{rand = rng3}
+
+thief :: Game -> IO Game
+thief game = fmap actDec $ mapOther (thiefAtk $ user $ turn game) game
+
 baseSet :: M.Map String Card
 baseSet = M.fromList
   -- basic cards
@@ -332,4 +377,9 @@ baseSet = M.fromList
   , ("spy", Card 4 0 zero (Just spy) $ "+1 Card\n+1 Action\n\n" ++ dWrap
         "Each player (including you) reveals the top card of his deck and\
        \ either discards it or puts it back, your choice.\n")
+  , ("thief", Card 4 0 zero (Just thief) $ dWrap
+        "Each other player reveals the top 2 cards of his deck. If they\
+       \ revealed any Treasure cards, they trash one of them that you choose.\
+       \ You may gain any or all of these trashed cards. They discard the\
+       \ other revealed cards.\n")
   ]
