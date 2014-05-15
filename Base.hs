@@ -3,6 +3,7 @@ module Base ( baseSet ) where
 
 import qualified Data.Map as M
 import Data.List
+import Data.Maybe
 import Text.Printf
 import System.IO
 
@@ -112,6 +113,23 @@ remodel game@Game{cards = cs, turn = trn} = do
     where msg = printf "Which card would you like to remodel?"
           echeck crd = if crd `elem` (hand $ actor $ game) then Nothing else
             Just $ printf "'%s' is not in your hand!" crd
+
+throneroom :: Game -> IO Game
+throneroom g@Game{cards = cs, turn = Turn{user = u}} =
+    let User nm hnd dck dsc oi = actor g
+        echeck crd
+            | not $ crd `elem` hnd = Just $ printf "You don't have a %s." crd
+            | isJust $ func $ cs <> crd = Nothing
+            | otherwise = Just $ printf "%s is not an action card." crd
+    in do
+        crd <- prompt g u "Choose a card to play twice." echeck
+        iPrint g u $ printf "%s uses throne room on %s.\n" nm crd
+        let Just fn = func $ cs <> crd
+        case crd of
+            "feast"     -> do
+                g'  <- fn $ discard g "feast"
+                fn $ modActor g' (\x -> x{disc = "feast" : disc x})
+            _           -> fn (discard g crd) >>= simpleAct 0 0 0 2 >>= fn
 
 -- helper function for councilroom; draws a card for a list of user indices
 drawOther :: Game -> [Int] -> IO Game
@@ -365,7 +383,8 @@ baseSet = M.fromList
   , ("remodel", Card 4 0 zero (Just remodel) $ dWrap
         "Trash a card from your hand. Gain a card costing up to 2 gold more\
        \ than the trashed card.\n")
-  -- TODO throne room ;_;
+  , ("throneroom", Card 4 0 zero (Just throneroom) $ dWrap
+        "Choose an Action card in your hand. Play it twice.\n")
   , ("councilroom", Card 5 0 zero (Just councilroom) $ "+4 Cards\n+1 Buy\n\n" ++
         dWrap "Each other player draws a card.")
   , ("library", Card 5 0 zero (Just library) $ dWrap
