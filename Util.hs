@@ -202,6 +202,8 @@ discard game c = modActor game (\u@(User _ h _ d _) -> u{hand = delete c h,
 prompt :: Game -> Int -> String -> (String -> Maybe String) -> IO String
 prompt game usr msg fn = do
     hPutStrLn out msg
+    hPutStr out "> "
+    hFlush out
     resp <- hGetLine inp
     case words resp of
         "/hand":_   -> uPrint (printf "Your hand is %s.\n" (haShow hnd)) >> redo
